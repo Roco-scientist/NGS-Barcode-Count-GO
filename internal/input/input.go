@@ -7,9 +7,9 @@ import (
 	"os"
 )
 
-func read_fastq(fastq_path string, sequences []string) int {
+func ReadFastq(fastq_path string, sequences []string) int {
 	file, err := os.Open(fastq_path)
-	if err == nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
