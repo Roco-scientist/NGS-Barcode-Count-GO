@@ -8,10 +8,10 @@ import (
 	"github.com/Roco-scientist/barcode-count-go/internal/results"
 )
 
-func ParseSequences(sequences chan string, wg *sync.WaitGroup, counts *results.Counts, format input.SequenceFormat, sample_barcodes []string) {
+func ParseSequences(sequences chan string, wg *sync.WaitGroup, counts *results.Counts, format input.SequenceFormat, sample_barcodes input.SampleBarcodes) {
 	defer wg.Done()
 	sample_barcodes_check := make(map[string]struct{})
-	for _, sample_barcode := range sample_barcodes {
+	for _, sample_barcode := range sample_barcodes.Barcodes {
 		sample_barcodes_check[sample_barcode] = struct{}{}
 	}
 	for sequence := range sequences {
@@ -25,7 +25,7 @@ func ParseSequences(sequences chan string, wg *sync.WaitGroup, counts *results.C
 				case name == "sample":
 					sample_barcode = sequence_match[i]
 					if _, ok := sample_barcodes_check[sample_barcode]; !ok {
-						sample_barcode = fix_sequence(sample_barcode, sample_barcodes, len(sample_barcode)/5)
+						sample_barcode = fix_sequence(sample_barcode, sample_barcodes.Barcodes, len(sample_barcode)/5)
 					}
 					if sample_barcode == "" {
 						break
@@ -46,7 +46,7 @@ func ParseSequences(sequences chan string, wg *sync.WaitGroup, counts *results.C
 	}
 }
 
-func fix_sequence(query_sequence string, subject_sequences []string, max_errors int) {
+func fix_sequence(query_sequence string, subject_sequences []string, max_errors int) string {
 	best_mismatches := max_errors + 1
 	var best_match string
 	var mismatches int
