@@ -61,7 +61,6 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 
 	}
 	fmt.Println(f.format_string)
-	fmt.Println(regex_string)
 	f.Format_regex = *regexp.MustCompile(regex_string)
 }
 

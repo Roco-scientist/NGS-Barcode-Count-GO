@@ -1,7 +1,6 @@
 package results
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -24,7 +23,6 @@ func NewCount(sample_barcodes []string) *Counts {
 
 func (c *Counts) AddCount(sample_barcode string, counted_barcodes string, random_barcode string) {
 	if len(random_barcode) == 0 {
-		fmt.Printf("Sample: %v\tcounted_barcodes: %v\n", sample_barcode, counted_barcodes)
 		c.mu.Lock()
 		c.No_random[sample_barcode][counted_barcodes]++
 		c.mu.Unlock()

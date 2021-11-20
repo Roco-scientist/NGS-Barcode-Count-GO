@@ -7,14 +7,16 @@ import (
 	"github.com/Roco-scientist/barcode-count-go/internal/results"
 	"os/user"
 	"sync"
+	"time"
 )
 
 func main() {
+	defer un(trace("Total"))
 	threads := 8
 	var wg sync.WaitGroup
 	usr, _ := user.Current()
 	home := usr.HomeDir
-	fastq_path := home + "/test_del/test.4.fastq"
+	fastq_path := home + "/test_del/test.10000.double.fastq"
 	format_path := home + "/test_del/test.scheme.txt"
 	sample_file_path := home + "/test_del/sample_barcode_file.csv"
 
@@ -33,5 +35,15 @@ func main() {
 		go parse.ParseSequences(sequences, &wg, counts, format_info, *sample_barcodes)
 	}
 	wg.Wait()
-	fmt.Println(counts.No_random)
 }
+
+func trace(s string) (string, time.Time) {
+    // log.Println("START:", s)
+    return s, time.Now()
+}
+
+func un(s string, startTime time.Time) {
+    endTime := time.Now()
+    fmt.Printf("%v time: %v\n", s, endTime.Sub(startTime))
+}
+
