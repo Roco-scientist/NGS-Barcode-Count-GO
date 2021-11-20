@@ -3,12 +3,19 @@ package parse
 import (
 	"strings"
 	"sync"
-
 	"github.com/Roco-scientist/barcode-count-go/internal/input"
 	"github.com/Roco-scientist/barcode-count-go/internal/results"
 )
 
-func ParseSequences(sequences chan string, wg *sync.WaitGroup, counts *results.Counts, format input.SequenceFormat, sample_barcodes input.SampleBarcodes) {
+func ParseSequences(
+	sequences chan string,
+	wg *sync.WaitGroup,
+	counts *results.Counts,
+	format input.SequenceFormat,
+	sample_barcodes input.SampleBarcodes,
+	counted_barcodes_struct input.CountedBarcodes,
+	seq_errors *results.ParseErrors,
+) {
 	defer wg.Done()
 	sample_barcodes_check := make(map[string]struct{})
 	for _, sample_barcode := range sample_barcodes.Barcodes {
@@ -19,7 +26,8 @@ func ParseSequences(sequences chan string, wg *sync.WaitGroup, counts *results.C
 		}
 		sequence_match := format.Format_regex.FindStringSubmatch(sequence)
 		if sequence_match != nil {
-			var sample_barcode, random_barcode, counted_barcodes string
+			var sample_barcode, random_barcode, counted_barcodes, counted_barcode string
+			counted_barcode_num := 0
 			for i, name := range format.Format_regex.SubexpNames() {
 				switch {
 				case name == "sample":
@@ -28,20 +36,32 @@ func ParseSequences(sequences chan string, wg *sync.WaitGroup, counts *results.C
 						sample_barcode = fix_sequence(sample_barcode, sample_barcodes.Barcodes, len(sample_barcode)/5)
 					}
 					if sample_barcode == "" {
+						seq_errors.AddSampleError()
 						break
 					}
 				case name == "random":
 					random_barcode = sequence_match[i]
 				case strings.Contains(name, "counted"):
-					if len(counted_barcodes) != 0 {
+					if counted_barcode_num != 0 {
 						counted_barcodes += ","
 					}
+					counted_barcode = sequence_match[i]
+					if _, ok := counted_barcodes_struct.Conversion[counted_barcode_num][counted_barcode]; !ok {
+						counted_barcode = fix_sequence(counted_barcode, counted_barcodes_struct.Barcodes[counted_barcode_num], len(counted_barcode)/5)
+					}
+					if counted_barcode == "" {
+						seq_errors.AddCountedError()
+						break
+					}
 					counted_barcodes += sequence_match[i]
+					counted_barcode_num++
 				}
 			}
-			if sample_barcode != "" {
+			if sample_barcode != "" && counted_barcode != "" {
 				counts.AddCount(sample_barcode, counted_barcodes, random_barcode)
 			}
+		}else{
+			seq_errors.AddConstantError()
 		}
 	}
 }

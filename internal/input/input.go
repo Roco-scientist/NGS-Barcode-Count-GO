@@ -66,10 +66,10 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 
 type SampleBarcodes struct {
 	Conversion map[string]string
-	Barcodes []string
+	Barcodes   []string
 }
 
-func NewSampleBarcodes(sample_file_path string) *SampleBarcodes {
+func NewSampleBarcodes(sample_file_path string) SampleBarcodes {
 	file, err := os.Open(sample_file_path)
 	if err != nil {
 		log.Fatal(err)
@@ -86,7 +86,58 @@ func NewSampleBarcodes(sample_file_path string) *SampleBarcodes {
 		sample_barcodes.Conversion[row[0]] = row[1]
 		sample_barcodes.Barcodes = append(sample_barcodes.Barcodes, row[0])
 	}
-	return &sample_barcodes
+	return sample_barcodes
+}
+
+type CountedBarcodes struct {
+	Conversion []map[string]string
+	Barcodes   [][]string
+}
+
+func NewCountedBarcodes(counted_bc_file_path string) CountedBarcodes {
+	file, err := os.Open(counted_bc_file_path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var counted_barcodes CountedBarcodes
+
+	scanner := bufio.NewScanner(file)
+	scanner.Scan() // remove the header
+	var barcode_nums []int
+	var rows []string
+	for scanner.Scan() {
+		row_split := strings.Split(scanner.Text(), ",")
+		barcode_num, _ := strconv.Atoi(row_split[2])
+		barcode_nums = append(barcode_nums, barcode_num)
+		rows = append(rows, row_split[0]+","+row_split[1]+","+row_split[2])
+	}
+	total_barcodes := max(barcode_nums)
+
+	for i := 0; i < total_barcodes; i++ {
+		counted_barcodes.Conversion = append(counted_barcodes.Conversion, make(map[string]string))
+		counted_barcodes.Barcodes = append(counted_barcodes.Barcodes, make([]string, 0))
+	}
+
+	for _, row := range rows {
+		row_split := strings.Split(row, ",")
+		barcode_num, _ := strconv.Atoi(row_split[2])
+		insert_num := barcode_num - 1
+		counted_barcodes.Conversion[insert_num][row_split[0]] = row_split[1]
+		counted_barcodes.Barcodes[insert_num] = append(counted_barcodes.Barcodes[insert_num], row_split[0])
+	}
+	return counted_barcodes
+}
+
+func max(int_slice []int) int {
+	max_int := -10000000
+	for _, integer := range int_slice {
+		if integer > max_int {
+			max_int = integer
+		}
+	}
+	return max_int
 }
 
 func ReadFastq(fastq_path string, sequences chan string, wg *sync.WaitGroup) int {

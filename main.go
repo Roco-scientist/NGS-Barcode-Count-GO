@@ -19,6 +19,7 @@ func main() {
 	fastq_path := home + "/test_del/test.10000.double.fastq"
 	format_path := home + "/test_del/test.scheme.txt"
 	sample_file_path := home + "/test_del/sample_barcode_file.csv"
+	counted_bc_path := home + "/test_del/counted_barcodes.csv"
 
 	sample_barcodes := input.NewSampleBarcodes(sample_file_path)
 
@@ -27,14 +28,19 @@ func main() {
 	var format_info input.SequenceFormat
 	format_info.AddSearchRegex(format_path)
 
+	var seq_errors results.ParseErrors
+
+	counted_barcodes := input.NewCountedBarcodes(counted_bc_path)
+
 	sequences := make(chan string)
 	wg.Add(1)
 	go input.ReadFastq(fastq_path, sequences, &wg)
 	for i := 1; i < threads; i++ {
 		wg.Add(1)
-		go parse.ParseSequences(sequences, &wg, counts, format_info, *sample_barcodes)
+		go parse.ParseSequences(sequences, &wg, counts, format_info, sample_barcodes, counted_barcodes, &seq_errors)
 	}
 	wg.Wait()
+	seq_errors.Print()
 }
 
 func trace(s string) (string, time.Time) {

@@ -1,6 +1,7 @@
 package results
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -31,4 +32,38 @@ func (c *Counts) AddCount(sample_barcode string, counted_barcodes string, random
 		c.Random[sample_barcode][counted_barcodes][random_barcode] = true
 		c.mu.Unlock()
 	}
+}
+
+type ParseErrors struct {
+	constant int
+	sample int
+	counted int
+	constant_mu sync.Mutex
+	sample_mu sync.Mutex
+	counted_mu sync.Mutex
+}
+
+func (p *ParseErrors) AddConstantError() {
+	p.constant_mu.Lock()
+	p.constant++
+	p.constant_mu.Unlock()
+}
+
+func (p *ParseErrors) AddSampleError() {
+	p.sample_mu.Lock()
+	p.sample++
+	p.sample_mu.Unlock()
+}
+
+func (p *ParseErrors) AddCountedError() {
+	p.counted_mu.Lock()
+	p.counted++
+	p.counted_mu.Unlock()
+}
+
+func (p *ParseErrors) Print() {
+	fmt.Printf(
+	"Constant region errrors: %v\n" +
+	"Sample barcode errors:   %v\n" +
+	"Counted barcode errors:  %v\n", p.constant, p.sample, p.counted)
 }
