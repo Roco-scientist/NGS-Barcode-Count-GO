@@ -45,7 +45,7 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 		}
 
 		if len(group_name) != 0 {
-			digits_string := digit_search.FindString(format_text)
+			digits_string := digit_search.FindString(group)
 			digits, _ := strconv.Atoi(digits_string)
 			for i := 0; i < digits; i++ {
 				f.format_string += "N"
@@ -63,6 +63,31 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 	fmt.Println(f.format_string)
 	fmt.Println(regex_string)
 	f.Format_regex = *regexp.MustCompile(regex_string)
+}
+
+type SampleBarcodes struct {
+	Conversion map[string]string
+	Barcodes []string
+}
+
+func NewSampleBarcodes(sample_file_path string) *SampleBarcodes {
+	file, err := os.Open(sample_file_path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var sample_barcodes SampleBarcodes
+
+	scanner := bufio.NewScanner(file)
+	scanner.Scan() // remove the header
+	sample_barcodes.Conversion = make(map[string]string)
+	for scanner.Scan() {
+		row := strings.Split(scanner.Text(), ",")
+		sample_barcodes.Conversion[row[0]] = row[1]
+		sample_barcodes.Barcodes = append(sample_barcodes.Barcodes, row[0])
+	}
+	return &sample_barcodes
 }
 
 func ReadFastq(fastq_path string, sequences chan string, wg *sync.WaitGroup) int {
