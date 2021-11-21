@@ -6,7 +6,7 @@ import (
 )
 
 type Counts struct {
-	mu sync.Mutex
+	mu        sync.Mutex
 	No_random map[string]map[string]int
 	Random    map[string]map[string]map[string]bool
 }
@@ -15,7 +15,7 @@ func NewCount(sample_barcodes []string) *Counts {
 	var count Counts
 	count.No_random = make(map[string]map[string]int)
 	count.Random = make(map[string]map[string]map[string]bool)
-	for _, sample_barcode := range sample_barcodes{
+	for _, sample_barcode := range sample_barcodes {
 		count.No_random[sample_barcode] = make(map[string]int)
 		count.Random[sample_barcode] = make(map[string]map[string]bool)
 	}
@@ -35,12 +35,20 @@ func (c *Counts) AddCount(sample_barcode string, counted_barcodes string, random
 }
 
 type ParseErrors struct {
-	constant int
-	sample int
-	counted int
+	correct     int
+	constant    int
+	sample      int
+	counted     int
+	correct_mu  sync.Mutex
 	constant_mu sync.Mutex
-	sample_mu sync.Mutex
-	counted_mu sync.Mutex
+	sample_mu   sync.Mutex
+	counted_mu  sync.Mutex
+}
+
+func (p *ParseErrors) AddCorrect() {
+	p.correct_mu.Lock()
+	p.correct++
+	p.correct_mu.Unlock()
 }
 
 func (p *ParseErrors) AddConstantError() {
@@ -62,8 +70,9 @@ func (p *ParseErrors) AddCountedError() {
 }
 
 func (p *ParseErrors) Print() {
-	fmt.Printf(
-	"Constant region errrors: %v\n" +
-	"Sample barcode errors:   %v\n" +
-	"Counted barcode errors:  %v\n", p.constant, p.sample, p.counted)
+	fmt.Printf("Correctly matched sequences: %v\n"+
+		"Constant region errrors:     %v\n"+
+		"Sample barcode errors:       %v\n"+
+		"Counted barcode errors:      %v\n",
+		p.correct, p.constant, p.sample, p.counted)
 }

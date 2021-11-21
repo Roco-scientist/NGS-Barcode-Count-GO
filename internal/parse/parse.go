@@ -60,6 +60,7 @@ func ParseSequences(
 			}
 			if sample_barcode != "" && counted_barcode != "" {
 				counts.AddCount(sample_barcode, counted_barcodes, random_barcode)
+				seq_errors.AddCorrect()
 			}
 		} else {
 			seq_errors.AddConstantError()
