@@ -60,11 +60,17 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 			}
 		}
 	}
+	var header_start string
+	for i:= 0 ; i < counted_barcodes_struct.Num_barcodes ; i++ {
+		header_start += "Barcode_" + strconv.Itoa(i+1) + ","
+	}
+
+	sample_header := header_start + "Count"
 	for _, sample_barcode := range sample_barcodes_sorted {
 		out_file_name := outpath + today + "_" + sample_barcodes.Conversion[sample_barcode] + ".counts.csv"
-		var sample_out string
+		sample_out := sample_header
 		for counted_barcodes, count := range c.No_random[sample_barcode] {
-			sample_out += "\n" + sample_barcodes.Conversion[sample_barcode] + "," + counted_barcodes + "," + strconv.Itoa(count)
+			sample_out += "\n" + counted_barcodes + "," + strconv.Itoa(count)
 		}
 		file, err := os.Create(out_file_name)
 		if err != nil {
