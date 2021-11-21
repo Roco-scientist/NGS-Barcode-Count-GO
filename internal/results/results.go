@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -70,7 +71,8 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 		out_file_name := outpath + today + "_" + sample_barcodes.Conversion[sample_barcode] + ".counts.csv"
 		sample_out := sample_header
 		for counted_barcodes, count := range c.No_random[sample_barcode] {
-			sample_out += "\n" + counted_barcodes + "," + strconv.Itoa(count)
+			converted_barcodes := convert_counted(counted_barcodes, counted_barcodes_struct)
+			sample_out += "\n" + converted_barcodes + "," + strconv.Itoa(count)
 		}
 		file, err := os.Create(out_file_name)
 		if err != nil {
@@ -81,6 +83,18 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 			log.Fatal(err)
 		}
 	}
+}
+
+func convert_counted(counted_barcodes string, counted_barcodes_struct input.CountedBarcodes) string{
+	var converted_barcodes string
+	for i, counted_barcode := range strings.Split(counted_barcodes, ",") {
+		if len(converted_barcodes) != 0 {
+			converted_barcodes += ","
+		}
+		converted_barcodes += counted_barcodes_struct.Conversion[i][counted_barcode]
+	}
+	converted_barcodes = strings.TrimSuffix(converted_barcodes, ",")
+	return converted_barcodes
 }
 
 type ParseErrors struct {

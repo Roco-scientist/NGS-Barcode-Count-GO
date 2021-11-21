@@ -54,15 +54,16 @@ func ParseSequences(
 					if counted_barcode == "" {
 						seq_errors.AddCountedError()
 						sequence_fail = true
+					} else {
+						counted_barcodes += counted_barcode
+						counted_barcode_num++
 					}
-					counted_barcodes += sequence_match[i]
-					counted_barcode_num++
 				}
 				if sequence_fail {
 					break
 				}
 			}
-			if !sequence_fail{
+			if !sequence_fail {
 				counts.AddCount(sample_barcode, counted_barcodes, random_barcode)
 				seq_errors.AddCorrect()
 			}
