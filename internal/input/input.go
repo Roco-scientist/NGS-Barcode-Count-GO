@@ -60,8 +60,13 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 		}
 
 	}
-	fmt.Println(f.Format_string)
 	f.Format_regex = *regexp.MustCompile(regex_string)
+}
+
+func (f *SequenceFormat) Print() {
+	fmt.Println("-FORMAT-")
+	fmt.Println(f.Format_string)
+	fmt.Println()
 }
 
 type SampleBarcodes struct {
@@ -90,8 +95,9 @@ func NewSampleBarcodes(sample_file_path string) SampleBarcodes {
 }
 
 type CountedBarcodes struct {
-	Conversion []map[string]string
-	Barcodes   [][]string
+	Conversion   []map[string]string
+	Barcodes     [][]string
+	Num_barcodes int
 }
 
 func NewCountedBarcodes(counted_bc_file_path string) CountedBarcodes {
@@ -113,9 +119,9 @@ func NewCountedBarcodes(counted_bc_file_path string) CountedBarcodes {
 		barcode_nums = append(barcode_nums, barcode_num)
 		rows = append(rows, row_split[0]+","+row_split[1]+","+row_split[2])
 	}
-	total_barcodes := max(barcode_nums)
+	counted_barcodes.Num_barcodes = max(barcode_nums)
 
-	for i := 0; i < total_barcodes; i++ {
+	for i := 0; i < counted_barcodes.Num_barcodes; i++ {
 		counted_barcodes.Conversion = append(counted_barcodes.Conversion, make(map[string]string))
 		counted_barcodes.Barcodes = append(counted_barcodes.Barcodes, make([]string, 0))
 	}
@@ -162,7 +168,7 @@ func ReadFastq(fastq_path string, sequences chan string, wg *sync.WaitGroup) int
 			}
 			sequences <- scanner.Text()
 			if total_reads%10000 == 0 {
-				fmt.Printf("\rTotal reads: %v", total_reads)
+				fmt.Printf("\rTotal reads:                 %v", total_reads)
 			}
 		case 4:
 			line_num = 0
@@ -171,6 +177,6 @@ func ReadFastq(fastq_path string, sequences chan string, wg *sync.WaitGroup) int
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("\rTotal reads: %v\n", total_reads)
+	fmt.Printf("\rTotal reads:                 %v\n", total_reads)
 	return total_reads
 }
