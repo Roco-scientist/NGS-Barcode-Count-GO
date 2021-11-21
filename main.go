@@ -13,7 +13,6 @@ import (
 func main() {
 	args := arguments.GetArgs()
 	defer un(trace("Total"))
-	threads := 8
 	var wg sync.WaitGroup
 
 	sample_barcodes := input.NewSampleBarcodes(args.Sample_barcodes_path)
@@ -31,17 +30,16 @@ func main() {
 	sequences := make(chan string)
 	wg.Add(1)
 	go input.ReadFastq(args.Fastq_path, sequences, &wg)
-	for i := 1; i < threads; i++ {
+	for i := 1; i < args.Threads; i++ {
 		wg.Add(1)
 		go parse.ParseSequences(sequences, &wg, counts, format_info, sample_barcodes, counted_barcodes, &seq_errors)
 	}
 	wg.Wait()
 	seq_errors.Print()
 	fmt.Println()
-	merge := false
 	enrich := false
 	fmt.Println("-WRITING COUNTS-")
-	counts.WriteCsv(args.Output_dir, merge, enrich, counted_barcodes, sample_barcodes)
+	counts.WriteCsv(args.Output_dir, args.Merge_output, enrich, counted_barcodes, sample_barcodes)
 }
 
 func trace(s string) (string, time.Time) {
