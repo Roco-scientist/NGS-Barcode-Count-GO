@@ -1,10 +1,10 @@
 package parse
 
 import (
-	"strings"
-	"sync"
 	"github.com/Roco-scientist/barcode-count-go/internal/input"
 	"github.com/Roco-scientist/barcode-count-go/internal/results"
+	"strings"
+	"sync"
 )
 
 func ParseSequences(
@@ -23,6 +23,7 @@ func ParseSequences(
 	}
 	for sequence := range sequences {
 		if !format.Format_regex.MatchString(sequence) {
+			sequence = fix_constant(sequence, format.Format_string)
 		}
 		sequence_match := format.Format_regex.FindStringSubmatch(sequence)
 		if sequence_match != nil {
@@ -60,10 +61,36 @@ func ParseSequences(
 			if sample_barcode != "" && counted_barcode != "" {
 				counts.AddCount(sample_barcode, counted_barcodes, random_barcode)
 			}
-		}else{
+		} else {
 			seq_errors.AddConstantError()
 		}
 	}
+}
+
+func fix_constant(query_sequence string, format_string string) string {
+	length_diff := len(query_sequence) - len(format_string)
+	var possible_seqs []string
+	for i := 0; i < length_diff; i++ {
+		possible_seqs = append(possible_seqs, query_sequence[i:i+len(format_string)])
+	}
+	best_seqeunce := fix_sequence(format_string, possible_seqs, len(format_string)/5)
+	if best_seqeunce != "" {
+		fixed_sequence := swap_barcodes(best_seqeunce, format_string)
+		return fixed_sequence
+	}
+	return ""
+}
+
+func swap_barcodes(best_seqeunce string, format_string string) string {
+	var fixed_sequence string
+	for i := 0; i < len(format_string); i++ {
+		if format_string[i] == 'N' {
+			fixed_sequence += string(best_seqeunce[i])
+		} else {
+			fixed_sequence += string(format_string[i])
+		}
+	}
+	return fixed_sequence
 }
 
 func fix_sequence(query_sequence string, subject_sequences []string, max_errors int) string {

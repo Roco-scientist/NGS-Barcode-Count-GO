@@ -13,7 +13,7 @@ import (
 
 type SequenceFormat struct {
 	Format_regex  regexp.Regexp
-	format_string string
+	Format_string string
 }
 
 func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
@@ -48,19 +48,19 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 			digits_string := digit_search.FindString(group)
 			digits, _ := strconv.Atoi(digits_string)
 			for i := 0; i < digits; i++ {
-				f.format_string += "N"
+				f.Format_string += "N"
 			}
 			regex_string += fmt.Sprintf("(?P<%v>[ATGCN]{%v})", group_name, digits_string)
 		} else if strings.Contains(group, "N") {
 			regex_string += fmt.Sprintf("[ATGCN]{%v}", len(group))
-			f.format_string += group
+			f.Format_string += group
 		} else {
 			regex_string += group
-			f.format_string += group
+			f.Format_string += group
 		}
 
 	}
-	fmt.Println(f.format_string)
+	fmt.Println(f.Format_string)
 	f.Format_regex = *regexp.MustCompile(regex_string)
 }
 
