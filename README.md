@@ -9,11 +9,11 @@ Multithreaded and low resource use.  Uses one thread to read and the rest to pro
 This program does not store all data within RAM but instead sequentially processes the sequencing data in order to remain memory efficient.  
 <br>
 <br>
-Error handling is defaulted at 20% maximum sequence error per constant region and barcode.  This can be changed through CLI arguments.  The algorithm fixes any sequenced constant region or barcode with the best match possible.  If there are two or more best matches,
-it is not counted.
+~~Error handling is defaulted at 20% maximum sequence error per constant region and barcode.  This can be changed through CLI arguments.  The algorithm fixes any sequenced constant region or barcode with the best match possible.  If there are two or more best matches,
+it is not counted.~~
 <br>
 <br>
-If there is a random barcode included, sequences with a duplicated random barcode are not counted.
+~~If there is a random barcode included, sequences with a duplicated random barcode are not counted.~~
 <br>
 <br>
 Go refactoring of <a href="https://github.com/Roco-scientist/NGS-Barcode-Count-dummy">NGS-Barcode-Count</a>, which is written in Rust. Features not yet refactored:<br>
@@ -24,6 +24,7 @@ Go refactoring of <a href="https://github.com/Roco-scientist/NGS-Barcode-Count-d
 <li>Use of a random barcode</li>
 <li>Stat file output</li>
 <li>Sequencing read quality filter</li>
+<li>Changing the error hanlding percentage/amount</li>
 </ul>
 <br>
 <br>
