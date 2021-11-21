@@ -44,7 +44,6 @@ func (c *Counts) AddCount(sample_barcode string, counted_barcodes string, random
 }
 
 func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barcodes_struct input.CountedBarcodes, sample_barcodes input.SampleBarcodes) {
-	today := time.Now().Local().Format("2006-01-02")
 	var sample_ids []string
 	for key := range sample_barcodes.Conversion {
 		sample_ids = append(sample_ids, sample_barcodes.Conversion[key])
@@ -62,18 +61,41 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 		}
 	}
 	var header_start string
-	for i:= 0 ; i < counted_barcodes_struct.Num_barcodes ; i++ {
+	for i := 0; i < counted_barcodes_struct.Num_barcodes; i++ {
 		header_start += "Barcode_" + strconv.Itoa(i+1) + ","
 	}
 
 	sample_header := header_start + "Count"
+	merge_header := header_start
+	var merge_out string
+	counted_barcodes_finished := make(map[string]bool)
+	if merge {
+		for i, sample_id := range sample_ids {
+			if i != 0 {
+				merge_header += ","
+			}
+			merge_header += sample_id
+		}
+		merge_out += merge_header
+	}
+	today := time.Now().Local().Format("2006-01-02")
 	for _, sample_barcode := range sample_barcodes_sorted {
-		out_file_name := outpath + today + "_" + sample_barcodes.Conversion[sample_barcode] + ".counts.csv"
 		sample_out := sample_header
 		for counted_barcodes, count := range c.No_random[sample_barcode] {
 			converted_barcodes := convert_counted(counted_barcodes, counted_barcodes_struct)
 			sample_out += "\n" + converted_barcodes + "," + strconv.Itoa(count)
+			if merge {
+				if _, ok := counted_barcodes_finished[counted_barcodes]; !ok {
+					merge_row := "\n" + converted_barcodes
+					for _, sample_barcode := range sample_barcodes_sorted {
+						merge_row += "," + strconv.Itoa(c.No_random[sample_barcode][counted_barcodes])
+					}
+					merge_out += merge_row
+					counted_barcodes_finished[counted_barcodes] = true
+				}
+			}
 		}
+		out_file_name := outpath + today + "_" + sample_barcodes.Conversion[sample_barcode] + ".counts.csv"
 		file, err := os.Create(out_file_name)
 		if err != nil {
 			log.Fatal(err)
@@ -83,9 +105,18 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 			log.Fatal(err)
 		}
 	}
+	merge_file_name := outpath + today + "_counts.all.csv"
+	merge_file, merge_err := os.Create(merge_file_name)
+	if merge_err != nil {
+		log.Fatal(merge_err)
+	}
+	_, merge_write_err := merge_file.WriteString(merge_out)
+	if merge_write_err != nil {
+		log.Fatal(merge_write_err)
+	}
 }
 
-func convert_counted(counted_barcodes string, counted_barcodes_struct input.CountedBarcodes) string{
+func convert_counted(counted_barcodes string, counted_barcodes_struct input.CountedBarcodes) string {
 	var converted_barcodes string
 	for i, counted_barcode := range strings.Split(counted_barcodes, ",") {
 		if len(converted_barcodes) != 0 {
