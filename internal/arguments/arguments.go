@@ -29,6 +29,7 @@ func GetArgs() Args {
 	format_path := parser.String("q", "sequence-format", &argparse.Options{Required: true, Help: "Sequence format file"})
 	counted_path := parser.String("c", "counted-barcodes", &argparse.Options{Required: true, Help: "Counted barcodes file"})
 	sample_path := parser.String("s", "sample-barcodes", &argparse.Options{Required: true, Help: "Sample barcodes file"})
+	output_dir := parser.String("o", "output-dir", &argparse.Options{Default: "./", Help: "Directory to output the counts to"})
 	err := parser.Parse(os.Args)
 	if err != nil {
 		log.Fatal(err)
@@ -37,5 +38,6 @@ func GetArgs() Args {
 	args.Format_path = *format_path
 	args.Counted_barcodes_path = *counted_path
 	args.Sample_barcodes_path = *sample_path
+	args.Output_dir = *output_dir
 	return args
 }
