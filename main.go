@@ -2,39 +2,35 @@ package main
 
 import (
 	"fmt"
+	"github.com/Roco-scientist/barcode-count-go/internal/arguments"
 	"github.com/Roco-scientist/barcode-count-go/internal/input"
 	"github.com/Roco-scientist/barcode-count-go/internal/parse"
 	"github.com/Roco-scientist/barcode-count-go/internal/results"
-	"os/user"
 	"sync"
 	"time"
 )
 
 func main() {
+	args := arguments.GetArgs()
+	fmt.Printf("Fastq: %v\nFormat: %v\n", args.Fastq_path, args.Format_path)
 	defer un(trace("Total"))
 	threads := 8
 	var wg sync.WaitGroup
-	usr, _ := user.Current()
-	home := usr.HomeDir
-	fastq_path := home + "/test_del/test.10000.double.fastq"
-	format_path := home + "/test_del/test.scheme.txt"
-	sample_file_path := home + "/test_del/sample_barcode_file.csv"
-	counted_bc_path := home + "/test_del/counted_barcodes.csv"
 
-	sample_barcodes := input.NewSampleBarcodes(sample_file_path)
+	sample_barcodes := input.NewSampleBarcodes(args.Sample_barcodes_path)
 
 	counts := results.NewCount(sample_barcodes.Barcodes)
 
 	var format_info input.SequenceFormat
-	format_info.AddSearchRegex(format_path)
+	format_info.AddSearchRegex(args.Format_path)
 
 	var seq_errors results.ParseErrors
 
-	counted_barcodes := input.NewCountedBarcodes(counted_bc_path)
+	counted_barcodes := input.NewCountedBarcodes(args.Counted_barcodes_path)
 
 	sequences := make(chan string)
 	wg.Add(1)
-	go input.ReadFastq(fastq_path, sequences, &wg)
+	go input.ReadFastq(args.Fastq_path, sequences, &wg)
 	for i := 1; i < threads; i++ {
 		wg.Add(1)
 		go parse.ParseSequences(sequences, &wg, counts, format_info, sample_barcodes, counted_barcodes, &seq_errors)
