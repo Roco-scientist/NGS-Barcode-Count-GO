@@ -29,6 +29,7 @@ func ParseSequences(
 		if sequence_match != nil {
 			var sample_barcode, random_barcode, counted_barcodes, counted_barcode string
 			counted_barcode_num := 0
+			sequence_fail := false
 			for i, name := range format.Format_regex.SubexpNames() {
 				switch {
 				case name == "sample":
@@ -38,7 +39,7 @@ func ParseSequences(
 					}
 					if sample_barcode == "" {
 						seq_errors.AddSampleError()
-						break
+						sequence_fail = true
 					}
 				case name == "random":
 					random_barcode = sequence_match[i]
@@ -52,13 +53,16 @@ func ParseSequences(
 					}
 					if counted_barcode == "" {
 						seq_errors.AddCountedError()
-						break
+						sequence_fail = true
 					}
 					counted_barcodes += sequence_match[i]
 					counted_barcode_num++
 				}
+				if sequence_fail {
+					break
+				}
 			}
-			if sample_barcode != "" && counted_barcode != "" {
+			if !sequence_fail{
 				counts.AddCount(sample_barcode, counted_barcodes, random_barcode)
 				seq_errors.AddCorrect()
 			}

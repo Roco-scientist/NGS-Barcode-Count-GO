@@ -1,8 +1,16 @@
 package results
 
 import (
+	// "bufio"
 	"fmt"
+	"log"
+	"os"
+	"sort"
+	"strconv"
 	"sync"
+	"time"
+
+	"github.com/Roco-scientist/barcode-count-go/internal/input"
 )
 
 type Counts struct {
@@ -31,6 +39,41 @@ func (c *Counts) AddCount(sample_barcode string, counted_barcodes string, random
 		c.mu.Lock()
 		c.Random[sample_barcode][counted_barcodes][random_barcode] = true
 		c.mu.Unlock()
+	}
+}
+
+func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barcodes_struct input.CountedBarcodes, sample_barcodes input.SampleBarcodes) {
+	today := time.Now().Local().Format("2006-01-02")
+	var sample_ids []string
+	for key := range sample_barcodes.Conversion {
+		sample_ids = append(sample_ids, sample_barcodes.Conversion[key])
+	}
+	sort.Strings(sample_ids)
+
+	var sample_barcodes_sorted []string
+
+	for _, sample_id := range sample_ids {
+		for key, value := range sample_barcodes.Conversion {
+			if value == sample_id {
+				sample_barcodes_sorted = append(sample_barcodes_sorted, key)
+				break
+			}
+		}
+	}
+	for _, sample_barcode := range sample_barcodes_sorted {
+		out_file_name := outpath + today + "_" + sample_barcodes.Conversion[sample_barcode] + ".counts.csv"
+		var sample_out string
+		for counted_barcodes, count := range c.No_random[sample_barcode] {
+			sample_out += "\n" + sample_barcodes.Conversion[sample_barcode] + "," + counted_barcodes + "," + strconv.Itoa(count)
+		}
+		file, err := os.Create(out_file_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, write_err := file.WriteString(sample_out)
+		if write_err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 

@@ -37,6 +37,10 @@ func main() {
 	}
 	wg.Wait()
 	seq_errors.Print()
+	merge := false
+	outpath := "./"
+	enrich := false
+	counts.WriteCsv(outpath, merge, enrich, counted_barcodes, sample_barcodes)
 }
 
 func trace(s string) (string, time.Time) {
