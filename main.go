@@ -12,7 +12,6 @@ import (
 
 func main() {
 	args := arguments.GetArgs()
-	fmt.Printf("Fastq: %v\nFormat: %v\n", args.Fastq_path, args.Format_path)
 	defer un(trace("Total"))
 	threads := 8
 	var wg sync.WaitGroup
@@ -23,6 +22,7 @@ func main() {
 
 	var format_info input.SequenceFormat
 	format_info.AddSearchRegex(args.Format_path)
+	format_info.Print()
 
 	var seq_errors results.ParseErrors
 
@@ -37,10 +37,11 @@ func main() {
 	}
 	wg.Wait()
 	seq_errors.Print()
+	fmt.Println()
 	merge := false
-	outpath := "./"
 	enrich := false
-	counts.WriteCsv(outpath, merge, enrich, counted_barcodes, sample_barcodes)
+	fmt.Println("-WRITING COUNTS-")
+	counts.WriteCsv(args.Output_dir, merge, enrich, counted_barcodes, sample_barcodes)
 }
 
 func trace(s string) (string, time.Time) {
