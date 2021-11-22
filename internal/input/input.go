@@ -14,6 +14,7 @@ import (
 type SequenceFormat struct {
 	Format_regex  regexp.Regexp
 	Format_string string
+	Constant_size int
 }
 
 func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
@@ -54,6 +55,7 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 		} else if strings.Contains(group, "N") {
 			regex_string += fmt.Sprintf("[ATGCN]{%v}", len(group))
 			f.Format_string += group
+			f.Constant_size += len(group)
 		} else {
 			regex_string += group
 			f.Format_string += group

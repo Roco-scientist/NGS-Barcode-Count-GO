@@ -23,7 +23,7 @@ func ParseSequences(
 	}
 	for sequence := range sequences {
 		if !format.Format_regex.MatchString(sequence) {
-			sequence = fix_constant(sequence, format.Format_string)
+			sequence = fix_constant(sequence, format.Format_string, format.Constant_size/5)
 		}
 		sequence_match := format.Format_regex.FindStringSubmatch(sequence)
 		if sequence_match != nil {
@@ -73,13 +73,13 @@ func ParseSequences(
 	}
 }
 
-func fix_constant(query_sequence string, format_string string) string {
+func fix_constant(query_sequence string, format_string string, max_errors int) string {
 	length_diff := len(query_sequence) - len(format_string)
 	var possible_seqs []string
 	for i := 0; i < length_diff; i++ {
 		possible_seqs = append(possible_seqs, query_sequence[i:i+len(format_string)])
 	}
-	best_seqeunce := fix_sequence(format_string, possible_seqs, len(format_string)/5)
+	best_seqeunce := fix_sequence(format_string, possible_seqs, max_errors)
 	if best_seqeunce != "" {
 		fixed_sequence := swap_barcodes(best_seqeunce, format_string)
 		return fixed_sequence
