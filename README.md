@@ -149,8 +149,9 @@ then the random barcode, within this situation, is the counted barcode and repre
 the program will output the counted random barcode sequence and the associated count.  Afterwards, clustering or any other analysis can be applied.
 
 ## Tests results
-On an 8 threaded i7-4790K CPU @ 4.00GHz with 16gb RAM, this algorithm was able to decode over 400 million sequencing reads in about an hour.<br>
-Results below: <br><br>
+On an 8 threaded i7-4790K CPU @ 4.00GHz with 16gb RAM, this algorithm was able to decode over 400 million sequencing reads in about a half hour.  
+Results below:  
+  
 Inflated fastq file
 ```
 Total reads:                 418770347
