@@ -80,8 +80,11 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 	}
 	today := time.Now().Local().Format("2006-01-02")
 	for _, sample_barcode := range sample_barcodes_sorted {
+		fmt.Printf("Gathering for %v\n", sample_barcodes.Conversion[sample_barcode])
 		sample_out := sample_header
+		total := 0
 		for counted_barcodes, count := range c.No_random[sample_barcode] {
+			total++
 			converted_barcodes := convert_counted(counted_barcodes, counted_barcodes_struct)
 			sample_out += "\n" + converted_barcodes + "," + strconv.Itoa(count)
 			if merge {
@@ -94,7 +97,11 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 					counted_barcodes_finished[counted_barcodes] = true
 				}
 			}
+			if total % 10000 == 0{
+				fmt.Printf("\rTotal: %v", total)
+			}
 		}
+		fmt.Printf("\rTotal: %v\nWriting...\n", total)
 		out_file_name := outpath + today + "_" + sample_barcodes.Conversion[sample_barcode] + ".counts.csv"
 		file, err := os.Create(out_file_name)
 		if err != nil {
@@ -105,6 +112,7 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 			log.Fatal(err)
 		}
 	}
+	fmt.Println()
 	merge_file_name := outpath + today + "_counts.all.csv"
 	merge_file, merge_err := os.Create(merge_file_name)
 	if merge_err != nil {
