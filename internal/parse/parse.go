@@ -107,7 +107,7 @@ func fix_sequence(query_sequence string, subject_sequences []string, max_errors 
 	for _, subject_sequence := range subject_sequences {
 		mismatches = 0
 		for i := 0; i < len(query_sequence); i++ {
-			if (query_sequence[i] != 'N' && subject_sequence[i] != 'N') && query_sequence[i] != subject_sequence[i] {
+			if  query_sequence[i] != subject_sequence[i] && query_sequence[i] != 'N' && subject_sequence[i] != 'N' {
 				mismatches++
 			}
 			if mismatches > best_mismatches {

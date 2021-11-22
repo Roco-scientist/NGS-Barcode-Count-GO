@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -14,6 +15,7 @@ import (
 
 func main() {
 	args := arguments.GetArgs()
+	runtime.GOMAXPROCS(args.Threads)
 	start := time.Now()
 
 	var wg sync.WaitGroup
@@ -33,7 +35,7 @@ func main() {
 	sequences := make(chan string)
 	wg.Add(1)
 	go input.ReadFastq(args.Fastq_path, sequences, &wg)
-	for i := 1; i < args.Threads; i++ {
+	for i := 1; i < (args.Threads * 3); i++ {
 		wg.Add(1)
 		go parse.ParseSequences(sequences, &wg, counts, format_info, sample_barcodes, counted_barcodes, &seq_errors)
 	}
