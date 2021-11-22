@@ -167,6 +167,6 @@ func (p *ParseErrors) Print() {
 	fmt.Printf("Correctly matched sequences: %v\n"+
 		"Constant region errrors:     %v\n"+
 		"Sample barcode errors:       %v\n"+
-		"Counted barcode errors:      %v\n",
+		"Counted barcode errors:      %v\n\n",
 		p.correct, p.constant, p.sample, p.counted)
 }

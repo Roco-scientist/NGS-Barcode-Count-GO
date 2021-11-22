@@ -2,17 +2,20 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/Roco-scientist/barcode-count-go/internal/arguments"
 	"github.com/Roco-scientist/barcode-count-go/internal/input"
 	"github.com/Roco-scientist/barcode-count-go/internal/parse"
 	"github.com/Roco-scientist/barcode-count-go/internal/results"
-	"sync"
-	"time"
 )
 
 func main() {
 	args := arguments.GetArgs()
-	defer un(trace("Total"))
+	start := time.Now()
+
 	var wg sync.WaitGroup
 
 	sample_barcodes := input.NewSampleBarcodes(args.Sample_barcodes_path)
@@ -36,19 +39,38 @@ func main() {
 	}
 	wg.Wait()
 	seq_errors.Print()
-	fmt.Println()
-	enrich := false
+
+	comp_time := elapsedTime(start)
+	fmt.Printf("Computation time: %v\n\n", comp_time)
+
 	fmt.Println("-WRITING COUNTS-")
+	enrich := false
 	counts.WriteCsv(args.Output_dir, args.Merge_output, enrich, counted_barcodes, sample_barcodes)
+
+	tot_time := elapsedTime(start)
+	fmt.Printf("Total time: %v\n", tot_time)
 }
 
-func trace(s string) (string, time.Time) {
-    // log.Println("START:", s)
-    return s, time.Now()
-}
+func elapsedTime(startTime time.Time) string {
+	endTime := time.Now()
+	total_time := endTime.Sub(startTime)
+	milliseconds_string := strconv.Itoa(int(total_time.Milliseconds()))
+	for len(milliseconds_string) < 3 {
+		milliseconds_string = "0" + milliseconds_string
+	}
+	var total_string string
 
-func un(s string, startTime time.Time) {
-    endTime := time.Now()
-    fmt.Printf("%v time: %v\n", s, endTime.Sub(startTime))
-}
+	minutes := int(total_time.Minutes()) % 60
+	seconds := int(total_time.Seconds()) % 3600
 
+	if total_time.Hours() >= 1 {
+		total_string += fmt.Sprintf("%v hours %v minutes ", int(total_time.Hours()), minutes)
+	} else if minutes >= 1 {
+		total_string += fmt.Sprintf("%v minutes ", minutes)
+	} else if seconds >= 1 {
+
+	}
+	total_string += fmt.Sprintf("%v.%v seconds", seconds, milliseconds_string)
+
+	return total_string
+}
