@@ -67,7 +67,7 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 
 	sample_header := header_start + "Count"
 	merge_header := header_start
-	var merge_out string
+	var merge_out strings.Builder
 	counted_barcodes_finished := make(map[string]bool)
 	if merge {
 		for i, sample_id := range sample_ids {
@@ -76,24 +76,25 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 			}
 			merge_header += sample_id
 		}
-		merge_out += merge_header
+		merge_out.WriteString(merge_header)
 	}
 	today := time.Now().Local().Format("2006-01-02")
 	for _, sample_barcode := range sample_barcodes_sorted {
 		fmt.Printf("Gathering for %v\n", sample_barcodes.Conversion[sample_barcode])
-		sample_out := sample_header
+		var sample_out strings.Builder
+		sample_out.WriteString(sample_header)
 		total := 0
 		for counted_barcodes, count := range c.No_random[sample_barcode] {
 			total++
 			converted_barcodes := convert_counted(counted_barcodes, counted_barcodes_struct)
-			sample_out += "\n" + converted_barcodes + "," + strconv.Itoa(count)
+			sample_out.WriteString("\n" + converted_barcodes + "," + strconv.Itoa(count))
 			if merge {
 				if _, ok := counted_barcodes_finished[counted_barcodes]; !ok {
 					merge_row := "\n" + converted_barcodes
 					for _, sample_barcode := range sample_barcodes_sorted {
 						merge_row += "," + strconv.Itoa(c.No_random[sample_barcode][counted_barcodes])
 					}
-					merge_out += merge_row
+					merge_out.WriteString(merge_row)
 					counted_barcodes_finished[counted_barcodes] = true
 				}
 			}
@@ -107,7 +108,7 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 		if err != nil {
 			log.Fatal(err)
 		}
-		_, write_err := file.WriteString(sample_out)
+		_, write_err := file.WriteString(sample_out.String())
 		if write_err != nil {
 			log.Fatal(err)
 		}
@@ -118,7 +119,7 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 	if merge_err != nil {
 		log.Fatal(merge_err)
 	}
-	_, merge_write_err := merge_file.WriteString(merge_out)
+	_, merge_write_err := merge_file.WriteString(merge_out.String())
 	if merge_write_err != nil {
 		log.Fatal(merge_write_err)
 	}
