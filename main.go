@@ -41,7 +41,7 @@ func main() {
 	seq_errors.Print()
 
 	comp_time := elapsedTime(start)
-	fmt.Printf("Computation time: %v\n\n", comp_time)
+	fmt.Printf("Compute time: %v\n\n", comp_time)
 
 	fmt.Println("-WRITING COUNTS-")
 	enrich := false
@@ -54,14 +54,14 @@ func main() {
 func elapsedTime(startTime time.Time) string {
 	endTime := time.Now()
 	total_time := endTime.Sub(startTime)
-	milliseconds_string := strconv.Itoa(int(total_time.Milliseconds()))
+	milliseconds_string := strconv.Itoa(int(total_time.Milliseconds()) % 1000)
 	for len(milliseconds_string) < 3 {
 		milliseconds_string = "0" + milliseconds_string
 	}
 	var total_string string
 
 	minutes := int(total_time.Minutes()) % 60
-	seconds := int(total_time.Seconds()) % 3600
+	seconds := int(total_time.Seconds()) % 60
 
 	if total_time.Hours() >= 1 {
 		total_string += fmt.Sprintf("%v hours %v minutes ", int(total_time.Hours()), minutes)

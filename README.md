@@ -271,6 +271,14 @@ On an 8 threaded i7-4790K CPU @ 4.00GHz with 16gb RAM, this algorithm was able t
 Results below: <br><br>
 Inflated fastq file
 ```
+Total reads:                 418770347
+Correctly matched sequences: 238847177
+Constant region errrors:     173537914
+Sample barcode errors:       1830484
+Counted barcode errors:      4554772
+
+Compute time: 55 minutes 51.897 seconds
+
 ```
 
 <br>
