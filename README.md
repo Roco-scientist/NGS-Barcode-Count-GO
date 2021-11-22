@@ -2,7 +2,7 @@
 Fast and memory efficient DNA barcode counter and decoder for next generation sequencing data.  Includes error handling.  Works for DEL (DNA encoded libraries), high throughput CRISPR sequencing, barcode sequencing.  If the barcode file is included, the program will convert to barcode names and correct for errors. If a random barcode is included to collapse PCR duplicates, these duplicates will not be counted.  Parsing over 400 million sequencing reads took under a half hour with 8 threads and around 2GB of RAM use.<br>
 <br>
 <br>
-For DEL analysis, a companion python package was created: <a href=https://github.com/Roco-scientist/DEL-Analysis>DEL-Analysis</a>
+For DEL analysis, a companion python package was created: [DEL-Analysis](https://github.com/Roco-scientist/DEL-Analysis)
 <br>
 <br>
 Multithreaded and low resource use.  Uses one thread to read and the rest to process the data, so at least a 2 threaded machine is essential.
@@ -16,25 +16,23 @@ it is not counted.~~
 ~~If there is a random barcode included, sequences with a duplicated random barcode are not counted.~~
 <br>
 <br>
-Go refactoring of <a href="https://github.com/Roco-scientist/NGS-Barcode-Count-dummy">NGS-Barcode-Count</a>, which is written in Rust. Features not yet refactored:<br>
-<ul>
-<li>gzipped fastq counting/decoding.  Only decompressed files supported</li>
-<li>Single and double barcode enrichment</li>
-<li>Lack of sample barcode and counted barcode file requirement</li>
-<li>Use of a random barcode</li>
-<li>Stat file output</li>
-<li>Sequencing read quality filter</li>
-<li>Changing the error hanlding percentage/amount</li>
-</ul>
+Go refactoring of [NGS-Barcode-Count](https://github.com/Roco-scientist/NGS-Barcode-Count-dummy), which is written in Rust. Features not yet refactored:<br>
+
+- gzipped fastq counting/decoding.  Only decompressed files supported
+- Single and double barcode enrichment
+- Lack of sample barcode and counted barcode file requirement
+- Use of a random barcode
+- Stat file output
+- Sequencing read quality filter
+- Changing the error hanlding percentage/amount
 <br>
 <br>
-Inspired by and some ideas adopted from <a href=https://github.com/sunghunbae/decode target="_blank" rel="noopener noreferrer">decode</a>
+Inspired by and some ideas adopted from [decode](https://github.com/sunghunbae/decode)
 
 
 ## Requirements
-<ul>
-<li>Go installed</li>
-</ul>
+
+- Go installed
 
 ## Build from source
 
@@ -56,12 +54,11 @@ go build
 
 ## Files Needed
 Currently supports FASTQ, sequence format, sample barcode conversion, and building block barcode conversion.
-<ul>
-<li><a href=#fastq-file>FASTQ</a></li>
-<li><a href=#sequence-format-file>Sequence format file</a></li>
-<li><a href=#sample-barcode-file>Sample barcode file</a></li>
-<li><a href=#counted-barcode-conversion-file>Counted barcode conversion file</a></li>
-</ul>
+  
+- [FASTQ](#fastq-file)
+- [Sequence format file](#sequence-format-file)
+- [Sample barcode file](#sample-barcode-file)
+- [Counted barcode conversion file](#counted-barcode-conversion-file)
 
 
 ### Fastq File
@@ -69,94 +66,37 @@ Accepts gzipped and unzipped fastq files.<br>
 
 ### Sequence Format File
 The sequence format file should be a text file that is line separated by the type of format.  The following is supported where the '#' should be replaced by the number of nucleotides corresponding to the barcode:<br>
-<table>
-<tr>
-<th>Sequence Type</th>
-<th>File Code</th>
-<th>Number Needed/Allowed</th>
-</tr>
-<td>Constant</td>
-<td>ATGCN</td>
-<td>1 or more</td>
-<tr>
-<td>Sample Barcode</td>
-<td>[#]</td>
-<td>0-1</td>
-</tr>
-<tr>
-<td>Barcode for counting</td>
-<td>{#}</td>
-<td>1 or more</td>
-</tr>
-<tr>
-<td>Random Barcode</td>
-<td>(#)</td>
-<td>0-1</td>
-</tr>
-</table>
+  
+|Sequence Type|File Code|Number Needed/Allowed|
+|-------------|---------|---------------------|
+|Constant|ATGCN|1 or more|
+|Sample Barcode|[#]|0-1|
+|Barcode for counting|{#}|1 or more|
+|Random Barcode|(#)|0-1|
 
 An example can be found in [scheme.example.txt](scheme.example.txt).  Since the algorthm uses a regex search to find the scheme, the scheme can exist anywhere within the sequence read.
 
 ### Sample Barcode File
-<b>Optional</b><br>
+**Optional**  
 The sample_barcode_file is a comma separate file with the following format:<br>
-<table>
-<tr>
-<th>Barcode</th>
-<th>Sample_ID</th>
-</tr>
-<tr>
-<td>AGCATAC</td>
-<td>Sample_name_1</td>
-</tr>
-<tr>
-<td>AACTTAC</td>
-<td>Sample_name_2</td>
-</tr>
-</table>
+|Barcode|Sample_ID|
+|-------|---------|
+|AGCATAC|Sample_name_1|
+|AACTTAC|Sample_name_2|
 
 An example can be found in [sample_barcode.example.csv](sample_barcode.example.csv).
 
 ### Counted Barcode Conversion File
-<b>Optional</b><br>
+**Optional**  
 The barcode_file is a comma separate file with the following format:<br>
-<table>
-<tr>
-<th>Barcode</th>
-<th>Barcode_ID</th>
-<th>Barcode_Number</th>
-</tr>
-<tr>
-<td>CAGAGAC</td>
-<td>Barcode_name_1</td>
-<td>1</td>
-</tr>
-<tr>
-<td>TGATTGC</td>
-<td>Barcode_name_2</td>
-<td>1</td>
-</tr>
-<tr>
-<td>ATGAAAT</td>
-<td>Barcode_name_3</td>
-<td>2</td>
-</tr>
-<tr>
-<td>GCGCCAT</td>
-<td>Barcode_name_4</td>
-<td>2</td>
-</tr>
-<tr>
-<td>GATAGCT</td>
-<td>Barcode_name_5</td>
-<td>3</td>
-</tr>
-<tr>
-<td>TTAGCTA</td>
-<td>Barcode_name_6</td>
-<td>3</td>
-</tr>
-</table>
+|Barcode|Barcode_ID|Barcode_Number|
+|-------|----------|--------------|
+|CAGAGAC|Barcode_name_1|1|
+|TGATTGC|Barcode_name_2|1|
+|ATGAAAT|Barcode_name_3|2|
+|GCGCCAT|Barcode_name_4|2|
+|GATAGCT|Barcode_name_5|3|
+|TTAGCTA|Barcode_name_6|3|
 
 An example can be found in [barcode.example.csv](barcode.example.csv).<br><br>
 
@@ -167,8 +107,8 @@ representing one of the three barcodes. For CRISPR or barcode seq, where there m
 
 ## Run
 After compilation, the `barcode-count-go` binary can be moved anywhere.
-<br>
-<br>
+\
+\
 Run barcode-count-go<br>
 
 ```
@@ -181,77 +121,27 @@ Run barcode-count-go<br>
 	--merge-output
 ```
 
-<br>
-<ul>
-<li>
---counted-barcodes is optional.  If it is not used, the output counts uses the DNA barcode to count with no error handling on these barcodes.
-</li>
-<li>
---sample-barcodes is optional.  
-</li>
-<li>
---output-dir defaults to the current directory if not used.
-</li>
-<li>
---threads defaults to the number of cores on the machine.
-</li>
-<li>
---merge-output flag that merges the output csv file so that each sample has one column
-</li>
-</ul>
+- --counted-barcodes is optional.  If it is not used, the output counts uses the DNA barcode to count with no error handling on these barcodes.
+- --sample-barcodes is optional.  
+- --output-dir defaults to the current directory if not used.
+- --threads defaults to the number of cores on the machine.
+- --merge-output flag that merges the output csv file so that each sample has one column
 
 ### Output files
 Each sample name will get a file in the default format of year-month-day_<sample_name>_counts.csv in the following format (for 3 counted barcodes):
-<table>
-<tr>
-<th>Barcode_1</th>
-<th>Barcode_2</th>
-<th>Barcode_3</th>
-<th>Count</th>
-</tr>
-<tr>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>#</td>
-</tr>
-<tr>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>#</td>
-</tr>
-</table>
+  
+|Barcode_1|Barcode_2|Barcode_3|Count|
+|---------|---------|---------|-----|
+|Barcode_ID/DNA code|Barcode_ID/DNA code|Barcode_ID/DNA code|#|
+|Barcode_ID/DNA code|Barcode_ID/DNA code|Barcode_ID/DNA code|#|
 
 Where Barcode_ID is used if there is a counted barcode conversion file, otherwise the DNA code is used. `#` represents the count number<br><br>
 If `--merge_output` is called, an additional file is created with the format (for 3 samples):
 
-<table>
-<tr>
-<th>Barcode_1</th>
-<th>Barcode_2</th>
-<th>Barcode_3</th>
-<th>Sample_1</th>
-<th>Sample_2</th>
-<th>Sample_3</th>
-</tr>
-<tr>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>#</td>
-<td>#</td>
-<td>#</td>
-</tr>
-<tr>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>Barcode_ID/DNA code</td>
-<td>#</td>
-<td>#</td>
-<td>#</td>
-</tr>
-</table>
+|Barcode_1|Barcode_2|Barcode_3|Sample_1|Sample_2|Sample_3|
+|---------|---------|---------|---------|---------|---------|
+|Barcode_ID/DNA code|Barcode_ID/DNA code|Barcode_ID/DNA code|#|#|#|
+|Barcode_ID/DNA code|Barcode_ID/DNA code|Barcode_ID/DNA code|#|#|#|
 
 ## Uses
 
@@ -277,8 +167,11 @@ Constant region errrors:     173537914
 Sample barcode errors:       1830484
 Counted barcode errors:      4554772
 
-Compute time: 55 minutes 51.897 seconds
+Compute time: 30 minutes 2.193 seconds
 
+-WRITING COUNTS-
+
+Total time: 30 minutes 32.202 seconds
 ```
 
 <br>
