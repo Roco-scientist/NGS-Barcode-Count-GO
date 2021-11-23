@@ -11,12 +11,18 @@ import (
 	"sync"
 )
 
+// SequenceFormat holds values which are used to find the barcodes within each sequencing read.
 type SequenceFormat struct {
-	Format_regex  regexp.Regexp
+	// Format_regex holds the regex which includes the search groups for the barcodes
+	Format_regex regexp.Regexp
+	// Format_string is a string of the sequence format where the barcodes are replaced with Ns.  This is used for error corrections
 	Format_string string
+	// Constant_size is how many nucleotides are not barcodes in order to calculate the amount of allowed errors within the constant region.
+	// Defaulted to 20% max
 	Constant_size int
 }
 
+// AddSearchRegex method uses the format scheme within the format file to create the Format_regex, Format_string, and Constant_size.
 func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 	var format_text string
 	file, err := os.Open(format_file_path)
