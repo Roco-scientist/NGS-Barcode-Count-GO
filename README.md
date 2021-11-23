@@ -12,7 +12,6 @@ it is not counted.~~
 ~~If there is a random barcode included, sequences with a duplicated random barcode are not counted.~~  
   
 Go refactoring of [NGS-Barcode-Count](https://github.com/Roco-scientist/NGS-Barcode-Count-dummy), which is written in Rust. Features not yet refactored:  
-- gzipped fastq counting/decoding.  Only decompressed files supported
 - Single and double barcode enrichment
 - Lack of sample barcode and counted barcode file requirement
 - Use of a random barcode
@@ -29,8 +28,8 @@ Inspired by and some ideas adopted from [decode](https://github.com/sunghunbae/d
 ## Build from source
 
 The following places a `barcode-count-go` executable within the `barcode-count-go/` directory.  This executable can be moved anywhere.
-One recommendation is to move it to a path directory (`echo $PATH`), such as `/usr/local/bin/` so that it can be executed from anywhere.
-<br><br>
+One recommendation is to move it to a path directory (`echo $PATH`), such as `/usr/local/bin/` so that it can be executed from anywhere.  
+  
 Clone the repo:
 
 ```
@@ -54,10 +53,10 @@ Currently supports FASTQ, sequence format, sample barcode conversion, and buildi
 
 
 ### Fastq File
-Accepts gzipped and unzipped fastq files.<br>
+Accepts gzipped and unzipped fastq files.  
 
 ### Sequence Format File
-The sequence format file should be a text file that is line separated by the type of format.  The following is supported where the '#' should be replaced by the number of nucleotides corresponding to the barcode:<br>
+The sequence format file should be a text file that is line separated by the type of format.  The following is supported where the '#' should be replaced by the number of nucleotides corresponding to the barcode:  
   
 |Sequence Type|File Code|Number Needed/Allowed|
 |-------------|---------|---------------------|
@@ -70,7 +69,7 @@ An example can be found in [scheme.example.txt](scheme.example.txt).  Since the 
 
 ### Sample Barcode File
 **Optional**  
-The sample_barcode_file is a comma separate file with the following format:<br>
+The sample_barcode_file is a comma separate file with the following format:  
 |Barcode|Sample_ID|
 |-------|---------|
 |AGCATAC|Sample_name_1|
@@ -80,7 +79,7 @@ An example can be found in [sample_barcode.example.csv](sample_barcode.example.c
 
 ### Counted Barcode Conversion File
 **Optional**  
-The barcode_file is a comma separate file with the following format:<br>
+The barcode_file is a comma separate file with the following format:  
 |Barcode|Barcode_ID|Barcode_Number|
 |-------|----------|--------------|
 |CAGAGAC|Barcode_name_1|1|
@@ -90,8 +89,8 @@ The barcode_file is a comma separate file with the following format:<br>
 |GATAGCT|Barcode_name_5|3|
 |TTAGCTA|Barcode_name_6|3|
 
-An example can be found in [barcode.example.csv](barcode.example.csv).<br><br>
-
+An example can be found in [barcode.example.csv](barcode.example.csv).  
+  
 Where the first column is the DNA barcode, the second column is the barcode ID which can be a smile string for DEL, CRISPR target ID, etc. but cannot contain commas. 
 The last column is the barcode number as an integer.  The barcode numbers are in the same order as the sequence format file and starting
 at 1. For example, if there are a total of 3 barcodes, which may be the case with DEL, you would only have 1, 2, or 3 within this column for each row, with each number
@@ -101,7 +100,7 @@ representing one of the three barcodes. For CRISPR or barcode seq, where there m
 After compilation, the `barcode-count-go` binary can be moved anywhere.
 \
 \
-Run barcode-count-go<br>
+Run barcode-count-go  
 
 ```
 ./barcode-count-go --fastq <fastq_file> \
@@ -127,7 +126,8 @@ Each sample name will get a file in the default format of year-month-day_<sample
 |Barcode_ID/DNA code|Barcode_ID/DNA code|Barcode_ID/DNA code|#|
 |Barcode_ID/DNA code|Barcode_ID/DNA code|Barcode_ID/DNA code|#|
 
-Where Barcode_ID is used if there is a counted barcode conversion file, otherwise the DNA code is used. `#` represents the count number<br><br>
+Where Barcode_ID is used if there is a counted barcode conversion file, otherwise the DNA code is used. `#` represents the count number  
+  
 If `--merge_output` is called, an additional file is created with the format (for 3 samples):
 
 |Barcode_1|Barcode_2|Barcode_3|Sample_1|Sample_2|Sample_3|
@@ -167,7 +167,7 @@ Compute time: 30 minutes 2.193 seconds
 Total time: 30 minutes 32.202 seconds
 ```
 
-<br>
+  
 Gzipped fastq file
 
 ```
