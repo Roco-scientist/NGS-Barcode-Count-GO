@@ -16,86 +16,86 @@ import (
 
 type Counts struct {
 	mu        sync.Mutex
-	No_random map[string]map[string]int
+	NoRandom map[string]map[string]int
 	Random    map[string]map[string]map[string]bool
 }
 
-func NewCount(sample_barcodes []string) *Counts {
+func NewCount(sampleBarcodes []string) *Counts {
 	var count Counts
-	count.No_random = make(map[string]map[string]int)
+	count.NoRandom = make(map[string]map[string]int)
 	count.Random = make(map[string]map[string]map[string]bool)
-	for _, sample_barcode := range sample_barcodes {
-		count.No_random[sample_barcode] = make(map[string]int)
-		count.Random[sample_barcode] = make(map[string]map[string]bool)
+	for _, sampleBarcode := range sampleBarcodes {
+		count.NoRandom[sampleBarcode] = make(map[string]int)
+		count.Random[sampleBarcode] = make(map[string]map[string]bool)
 	}
 	return &count
 }
 
-func (c *Counts) AddCount(sample_barcode string, counted_barcodes string, random_barcode string) {
-	if len(random_barcode) == 0 {
+func (c *Counts) AddCount(sampleBarcode string, countedBarcodes string, randomBarcode string) {
+	if len(randomBarcode) == 0 {
 		c.mu.Lock()
-		c.No_random[sample_barcode][counted_barcodes]++
+		c.NoRandom[sampleBarcode][countedBarcodes]++
 		c.mu.Unlock()
 	} else {
 		c.mu.Lock()
-		c.Random[sample_barcode][counted_barcodes][random_barcode] = true
+		c.Random[sampleBarcode][countedBarcodes][randomBarcode] = true
 		c.mu.Unlock()
 	}
 }
 
-func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barcodes_struct input.CountedBarcodes, sample_barcodes input.SampleBarcodes) {
-	var sample_ids []string
-	for key := range sample_barcodes.Conversion {
-		sample_ids = append(sample_ids, sample_barcodes.Conversion[key])
+func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, countedBarcodesStruct input.CountedBarcodes, sampleBarcodes input.SampleBarcodes) {
+	var sampleIds []string
+	for key := range sampleBarcodes.Conversion {
+		sampleIds = append(sampleIds, sampleBarcodes.Conversion[key])
 	}
-	sort.Strings(sample_ids)
+	sort.Strings(sampleIds)
 
-	var sample_barcodes_sorted []string
+	var sampleBarcodesSorted []string
 
-	for _, sample_id := range sample_ids {
-		for key, value := range sample_barcodes.Conversion {
-			if value == sample_id {
-				sample_barcodes_sorted = append(sample_barcodes_sorted, key)
+	for _, sampleId := range sampleIds {
+		for key, value := range sampleBarcodes.Conversion {
+			if value == sampleId {
+				sampleBarcodesSorted = append(sampleBarcodesSorted, key)
 				break
 			}
 		}
 	}
-	var header_start string
-	for i := 0; i < counted_barcodes_struct.Num_barcodes; i++ {
-		header_start += "Barcode_" + strconv.Itoa(i+1) + ","
+	var headerStart string
+	for i := 0; i < countedBarcodesStruct.NumBarcodes; i++ {
+		headerStart += "Barcode_" + strconv.Itoa(i+1) + ","
 	}
 
-	sample_header := header_start + "Count"
-	merge_header := header_start
-	var merge_out strings.Builder
-	counted_barcodes_finished := make(map[string]bool)
+	sampleHeader := headerStart + "Count"
+	mergeHeader := headerStart
+	var mergeOut strings.Builder
+	countedBarcodesFinished := make(map[string]bool)
 	if merge {
-		for i, sample_id := range sample_ids {
+		for i, sampleId := range sampleIds {
 			if i != 0 {
-				merge_header += ","
+				mergeHeader += ","
 			}
-			merge_header += sample_id
+			mergeHeader += sampleId
 		}
-		merge_out.WriteString(merge_header)
+		mergeOut.WriteString(mergeHeader)
 	}
 	today := time.Now().Local().Format("2006-01-02")
-	for _, sample_barcode := range sample_barcodes_sorted {
-		fmt.Printf("Gathering for %v\n", sample_barcodes.Conversion[sample_barcode])
-		var sample_out strings.Builder
-		sample_out.WriteString(sample_header)
+	for _, sampleBarcode := range sampleBarcodesSorted {
+		fmt.Printf("Gathering for %v\n", sampleBarcodes.Conversion[sampleBarcode])
+		var sampleOut strings.Builder
+		sampleOut.WriteString(sampleHeader)
 		total := 0
-		for counted_barcodes, count := range c.No_random[sample_barcode] {
+		for countedBarcodes, count := range c.NoRandom[sampleBarcode] {
 			total++
-			converted_barcodes := convert_counted(counted_barcodes, counted_barcodes_struct)
-			sample_out.WriteString("\n" + converted_barcodes + "," + strconv.Itoa(count))
+			convertedBarcodes := convertCounted(countedBarcodes, countedBarcodesStruct)
+			sampleOut.WriteString("\n" + convertedBarcodes + "," + strconv.Itoa(count))
 			if merge {
-				if _, ok := counted_barcodes_finished[counted_barcodes]; !ok {
-					merge_row := "\n" + converted_barcodes
-					for _, sample_barcode := range sample_barcodes_sorted {
-						merge_row += "," + strconv.Itoa(c.No_random[sample_barcode][counted_barcodes])
+				if _, ok := countedBarcodesFinished[countedBarcodes]; !ok {
+					mergeRow := "\n" + convertedBarcodes
+					for _, sampleBarcode := range sampleBarcodesSorted {
+						mergeRow += "," + strconv.Itoa(c.NoRandom[sampleBarcode][countedBarcodes])
 					}
-					merge_out.WriteString(merge_row)
-					counted_barcodes_finished[counted_barcodes] = true
+					mergeOut.WriteString(mergeRow)
+					countedBarcodesFinished[countedBarcodes] = true
 				}
 			}
 			if total % 10000 == 0{
@@ -103,38 +103,38 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, counted_barco
 			}
 		}
 		fmt.Printf("\rTotal: %v\nWriting...\n", total)
-		out_file_name := outpath + today + "_" + sample_barcodes.Conversion[sample_barcode] + ".counts.csv"
-		file, err := os.Create(out_file_name)
+		outFileName := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + ".counts.csv"
+		file, err := os.Create(outFileName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		_, write_err := file.WriteString(sample_out.String())
-		if write_err != nil {
+		_, writeErr := file.WriteString(sampleOut.String())
+		if writeErr != nil {
 			log.Fatal(err)
 		}
 	}
 	fmt.Println()
-	merge_file_name := outpath + today + "_counts.all.csv"
-	merge_file, merge_err := os.Create(merge_file_name)
-	if merge_err != nil {
-		log.Fatal(merge_err)
+	mergeFileName := outpath + today + "_counts.all.csv"
+	mergeFile, mergeErr := os.Create(mergeFileName)
+	if mergeErr != nil {
+		log.Fatal(mergeErr)
 	}
-	_, merge_write_err := merge_file.WriteString(merge_out.String())
-	if merge_write_err != nil {
-		log.Fatal(merge_write_err)
+	_, mergeWriteErr := mergeFile.WriteString(mergeOut.String())
+	if mergeWriteErr != nil {
+		log.Fatal(mergeWriteErr)
 	}
 }
 
-func convert_counted(counted_barcodes string, counted_barcodes_struct input.CountedBarcodes) string {
-	var converted_barcodes string
-	for i, counted_barcode := range strings.Split(counted_barcodes, ",") {
-		if len(converted_barcodes) != 0 {
-			converted_barcodes += ","
+func convertCounted(countedBarcodes string, countedBarcodesStruct input.CountedBarcodes) string {
+	var convertedBarcodes string
+	for i, countedBarcode := range strings.Split(countedBarcodes, ",") {
+		if len(convertedBarcodes) != 0 {
+			convertedBarcodes += ","
 		}
-		converted_barcodes += counted_barcodes_struct.Conversion[i][counted_barcode]
+		convertedBarcodes += countedBarcodesStruct.Conversion[i][countedBarcode]
 	}
-	converted_barcodes = strings.TrimSuffix(converted_barcodes, ",")
-	return converted_barcodes
+	convertedBarcodes = strings.TrimSuffix(convertedBarcodes, ",")
+	return convertedBarcodes
 }
 
 type ParseErrors struct {
@@ -142,34 +142,34 @@ type ParseErrors struct {
 	constant    int
 	sample      int
 	counted     int
-	correct_mu  sync.Mutex
-	constant_mu sync.Mutex
-	sample_mu   sync.Mutex
-	counted_mu  sync.Mutex
+	correctMu  sync.Mutex
+	constantMu sync.Mutex
+	sampleMu   sync.Mutex
+	countedMu  sync.Mutex
 }
 
 func (p *ParseErrors) AddCorrect() {
-	p.correct_mu.Lock()
+	p.correctMu.Lock()
 	p.correct++
-	p.correct_mu.Unlock()
+	p.correctMu.Unlock()
 }
 
 func (p *ParseErrors) AddConstantError() {
-	p.constant_mu.Lock()
+	p.constantMu.Lock()
 	p.constant++
-	p.constant_mu.Unlock()
+	p.constantMu.Unlock()
 }
 
 func (p *ParseErrors) AddSampleError() {
-	p.sample_mu.Lock()
+	p.sampleMu.Lock()
 	p.sample++
-	p.sample_mu.Unlock()
+	p.sampleMu.Unlock()
 }
 
 func (p *ParseErrors) AddCountedError() {
-	p.counted_mu.Lock()
+	p.countedMu.Lock()
 	p.counted++
-	p.counted_mu.Unlock()
+	p.countedMu.Unlock()
 }
 
 func (p *ParseErrors) Print() {
