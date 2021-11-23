@@ -75,11 +75,11 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 			// If there are Ns within the format scheme, add these as any nucleotide within the search
 			regex_string += fmt.Sprintf("[ATGCN]{%v}", len(group))
 			f.Format_string += group
-			f.Constant_size += len(group)
 		} else {
 			// If there are not any barcodes nor Ns, it should be the constant region.
 			regex_string += group
 			f.Format_string += group
+			f.Constant_size += len(group)
 		}
 
 	}
