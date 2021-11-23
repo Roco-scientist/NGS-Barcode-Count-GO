@@ -34,9 +34,12 @@ func ParseSequences(
 				switch {
 				case name == "sample":
 					sampleBarcode = sequenceMatch[i]
-					if _, ok := sampleBarcodesCheck[sampleBarcode]; !ok {
-						sampleBarcode = fixSequence(sampleBarcode, sampleBarcodes.Barcodes, len(sampleBarcode)/5)
+					if sampleBarcodes.Included {
+						if _, ok := sampleBarcodesCheck[sampleBarcode]; !ok {
+							sampleBarcode = fixSequence(sampleBarcode, sampleBarcodes.Barcodes, len(sampleBarcode)/5)
+						}
 					}
+					// If fixSequence does not find a best match, it returns an empty string
 					if sampleBarcode == "" {
 						seqErrors.AddSampleError()
 						sequenceFail = true
@@ -48,9 +51,13 @@ func ParseSequences(
 						countedBarcodes += ","
 					}
 					countedBarcode = sequenceMatch[i]
-					if _, ok := countedBarcodesStruct.Conversion[countedBarcodeNum][countedBarcode]; !ok {
-						countedBarcode = fixSequence(countedBarcode, countedBarcodesStruct.Barcodes[countedBarcodeNum], len(countedBarcode)/5)
+					// When a counted barcodes file is not included hte conversion is not created
+					if countedBarcodesStruct.Included {
+						if _, ok := countedBarcodesStruct.Conversion[countedBarcodeNum][countedBarcode]; !ok {
+							countedBarcode = fixSequence(countedBarcode, countedBarcodesStruct.Barcodes[countedBarcodeNum], len(countedBarcode)/5)
+						}
 					}
+					// If fixSequence does not find a best match, it returns an empty string
 					if countedBarcode == "" {
 						seqErrors.AddCountedError()
 						sequenceFail = true
@@ -64,7 +71,7 @@ func ParseSequences(
 				}
 			}
 			if !sequenceFail {
-				counts.AddCount(sampleBarcode, countedBarcodes, randomBarcode)
+				counts.AddCount(sampleBarcode, countedBarcodes, randomBarcode, sampleBarcodes.Included)
 				seqErrors.AddCorrect()
 			}
 		} else {
@@ -107,7 +114,7 @@ func fixSequence(querySequence string, subjectSequences []string, maxErrors int)
 	for _, subjectSequence := range subjectSequences {
 		mismatches = 0
 		for i := 0; i < len(querySequence); i++ {
-			if  querySequence[i] != subjectSequence[i] && querySequence[i] != 'N' && subjectSequence[i] != 'N' {
+			if querySequence[i] != subjectSequence[i] && querySequence[i] != 'N' && subjectSequence[i] != 'N' {
 				mismatches++
 			}
 			if mismatches > bestMismatches {
