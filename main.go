@@ -20,59 +20,59 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	sample_barcodes := input.NewSampleBarcodes(args.Sample_barcodes_path)
+	sampleBarcodes := input.NewSampleBarcodes(args.SampleBarcodesPath)
 
-	counts := results.NewCount(sample_barcodes.Barcodes)
+	counts := results.NewCount(sampleBarcodes.Barcodes)
 
-	var format_info input.SequenceFormat
-	format_info.AddSearchRegex(args.Format_path)
-	format_info.Print()
+	var formatInfo input.SequenceFormat
+	formatInfo.AddSearchRegex(args.FormatPath)
+	formatInfo.Print()
 
-	var seq_errors results.ParseErrors
+	var seqErrors results.ParseErrors
 
-	counted_barcodes := input.NewCountedBarcodes(args.Counted_barcodes_path)
+	countedBarcodes := input.NewCountedBarcodes(args.CountedBarcodesPath)
 
 	sequences := make(chan string)
 	wg.Add(1)
-	go input.ReadFastq(args.Fastq_path, sequences, &wg)
+	go input.ReadFastq(args.FastqPath, sequences, &wg)
 	for i := 1; i < (args.Threads * 3); i++ {
 		wg.Add(1)
-		go parse.ParseSequences(sequences, &wg, counts, format_info, sample_barcodes, counted_barcodes, &seq_errors)
+		go parse.ParseSequences(sequences, &wg, counts, formatInfo, sampleBarcodes, countedBarcodes, &seqErrors)
 	}
 	wg.Wait()
-	seq_errors.Print()
+	seqErrors.Print()
 
-	comp_time := elapsedTime(start)
-	fmt.Printf("Compute time: %v\n\n", comp_time)
+	compTime := elapsedTime(start)
+	fmt.Printf("Compute time: %v\n\n", compTime)
 
 	fmt.Println("-WRITING COUNTS-")
 	enrich := false
-	counts.WriteCsv(args.Output_dir, args.Merge_output, enrich, counted_barcodes, sample_barcodes)
+	counts.WriteCsv(args.OutputDir, args.MergeOutput, enrich, countedBarcodes, sampleBarcodes)
 
-	tot_time := elapsedTime(start)
-	fmt.Printf("Total time: %v\n", tot_time)
+	totTime := elapsedTime(start)
+	fmt.Printf("Total time: %v\n", totTime)
 }
 
 func elapsedTime(startTime time.Time) string {
 	endTime := time.Now()
-	total_time := endTime.Sub(startTime)
-	milliseconds_string := strconv.Itoa(int(total_time.Milliseconds()) % 1000)
-	for len(milliseconds_string) < 3 {
-		milliseconds_string = "0" + milliseconds_string
+	totalTime := endTime.Sub(startTime)
+	millisecondsString := strconv.Itoa(int(totalTime.Milliseconds()) % 1000)
+	for len(millisecondsString) < 3 {
+		millisecondsString = "0" + millisecondsString
 	}
-	var total_string string
+	var totalString string
 
-	minutes := int(total_time.Minutes()) % 60
-	seconds := int(total_time.Seconds()) % 60
+	minutes := int(totalTime.Minutes()) % 60
+	seconds := int(totalTime.Seconds()) % 60
 
-	if total_time.Hours() >= 1 {
-		total_string += fmt.Sprintf("%v hours %v minutes ", int(total_time.Hours()), minutes)
+	if totalTime.Hours() >= 1 {
+		totalString += fmt.Sprintf("%v hours %v minutes ", int(totalTime.Hours()), minutes)
 	} else if minutes >= 1 {
-		total_string += fmt.Sprintf("%v minutes ", minutes)
+		totalString += fmt.Sprintf("%v minutes ", minutes)
 	} else if seconds >= 1 {
 
 	}
-	total_string += fmt.Sprintf("%v.%v seconds", seconds, milliseconds_string)
+	totalString += fmt.Sprintf("%v.%v seconds", seconds, millisecondsString)
 
-	return total_string
+	return totalString
 }
