@@ -2,6 +2,7 @@ package input
 
 import (
 	"bufio"
+	"compress/gzip"
 	"fmt"
 	"log"
 	"os"
@@ -50,7 +51,7 @@ func (f *SequenceFormat) AddSearchRegex(format_file_path string) {
 	for _, group := range barcode_search.FindAllString(format_text, -1) {
 		// group_name is the capture group name for the regex object
 		var group_name string
-		// if the group contains any of the bracket styles that indicate a barcode, 
+		// if the group contains any of the bracket styles that indicate a barcode,
 		// save the group_name then create the named capture group
 		if strings.Contains(group, "[") {
 			group_name = "sample"
@@ -97,7 +98,7 @@ type SampleBarcodes struct {
 	// Conversion is a map where the key is the sample DNA barcode and the value is the sample id
 	Conversion map[string]string
 	// Barcodes is a slice of sample DNA barcodes
-	Barcodes   []string
+	Barcodes []string
 }
 
 // NewSampleBarcodes creates a new SampleBarcodes struct using the sample barcodes file
@@ -125,9 +126,9 @@ func NewSampleBarcodes(sample_file_path string) SampleBarcodes {
 type CountedBarcodes struct {
 	// Conversion is a slice of maps where each sequential counted barcode within the same read has its own map.
 	// The key for the maps are the DNA sequence for the counted barcodes.  The values are the corresponding IDs
-	Conversion   []map[string]string
+	Conversion []map[string]string
 	// Barcodes is a slice of slices for each sequential counted barcode.  This is used for sequencing error correction
-	Barcodes     [][]string
+	Barcodes [][]string
 	// Num_barcodes is how many counted barcodes are within each sequencing read.
 	Num_barcodes int
 }
@@ -146,8 +147,8 @@ func NewCountedBarcodes(counted_bc_file_path string) CountedBarcodes {
 	scanner.Scan() // remove the header
 	var barcode_nums []int
 	var rows []string
-	// First iterate through all lines and hold the information.  This is done so that the total number of 
-	// counted barcodes can be retrieved and all data can be placed within slices with the index being the 
+	// First iterate through all lines and hold the information.  This is done so that the total number of
+	// counted barcodes can be retrieved and all data can be placed within slices with the index being the
 	// the sequential number of the counted barcode
 	for scanner.Scan() {
 		row_split := strings.Split(scanner.Text(), ",")
@@ -186,7 +187,7 @@ func max(int_slice []int) int {
 	return max_int
 }
 
-// ReadFastq reads the fastq file line by line and posts the sequence to the sequences string channel.  
+// ReadFastq reads the fastq file line by line and posts the sequence to the sequences string channel.
 // This channel is then read by other parsing threads to parse the sequence
 func ReadFastq(fastq_path string, sequences chan string, wg *sync.WaitGroup) int {
 	defer close(sequences)
@@ -197,28 +198,56 @@ func ReadFastq(fastq_path string, sequences chan string, wg *sync.WaitGroup) int
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-
 	total_reads := 0
 	line_num := 0
-	for scanner.Scan() {
-		line_num++
-		switch line_num {
-		case 2:
-			total_reads++
-			for len(sequences) > 10000 {
-			}
-			sequences <- scanner.Text()
-			if total_reads%10000 == 0 {
-				fmt.Printf("\rTotal reads:                 %v", total_reads)
-			}
-		case 4:
-			line_num = 0
+	if strings.HasSuffix(fastq_path, "gz") {
+		rawContents, err := gzip.NewReader(file)
+		if err != nil {
+			log.Fatal(err)
 		}
+		scanner := bufio.NewScanner(rawContents)
+		for scanner.Scan() {
+			line_num++
+			switch line_num {
+			case 2:
+				total_reads++
+				for len(sequences) > 10000 {
+				}
+				sequences <- scanner.Text()
+				if total_reads%10000 == 0 {
+					fmt.Printf("\rTotal reads:                 %v", total_reads)
+				}
+			case 4:
+				line_num = 0
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
+	} else if strings.HasSuffix(fastq_path, "fastq") {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line_num++
+			switch line_num {
+			case 2:
+				total_reads++
+				for len(sequences) > 10000 {
+				}
+				sequences <- scanner.Text()
+				if total_reads%10000 == 0 {
+					fmt.Printf("\rTotal reads:                 %v", total_reads)
+				}
+			case 4:
+				line_num = 0
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
+	}else{
+		log.Fatal("fastq file must end with 'gz' or 'fastq'")
 	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
+
 	fmt.Printf("\rTotal reads:                 %v\n", total_reads)
 	return total_reads
 }
