@@ -40,7 +40,7 @@ func main() {
 	go input.ReadFastq(args.FastqPath, sequences, &wg)
 	for i := 1; i < (args.Threads * 3); i++ {
 		wg.Add(1)
-		go parse.ParseSequences(sequences, &wg, counts, formatInfo, sampleBarcodes, countedBarcodes, &seqErrors)
+		go parse.ParseSequences(sequences, &wg, counts, formatInfo, sampleBarcodes, countedBarcodes, &seqErrors, maxErrors)
 	}
 	wg.Wait()
 	seqErrors.Print()
