@@ -35,6 +35,9 @@ func GetArgs() Args {
 	outputDir := parser.String("o", "output-dir", &argparse.Options{Default: "./", Help: "Directory to output the counts to"})
 	mergeOutput := parser.Flag("m", "merge-output", &argparse.Options{Help: "Merge sample output counts into a single file.  Not necessary when there is only one sample"})
 	threads := parser.Int("t", "threads", &argparse.Options{Default: runtime.NumCPU(), Help: "Number of threads"})
+	barcodeErrors := parser.Int("", "max-errors-counted-barcode", &argparse.Options{Default: -1, Help: "Maximimum number of sequence errors allowed within each counted barcode. Defaults to 20% of the total."})
+	sampleErrors := parser.Int("", "max-errors-sample", &argparse.Options{Default: -1, Help: "Maximimum number of sequence errors allowed within the sample barcode. Defaults to 20% of the total."})
+	constantErrors := parser.Int("", "max-errors-constant", &argparse.Options{Default: -1, Help: "Maximimum number of sequence errors allowed within the constant region. Defaults to 20% of the total."})
 	err := parser.Parse(os.Args)
 	if err != nil {
 		log.Fatal(err)
@@ -52,5 +55,8 @@ func GetArgs() Args {
 		args.MergeOutput = false
 	}
 	args.Threads = *threads
+	args.BarcodesErrors = *barcodeErrors
+	args.SampleErrors = *sampleErrors
+	args.ConstantErrors = *constantErrors
 	return args
 }

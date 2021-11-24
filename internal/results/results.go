@@ -189,3 +189,56 @@ func (p *ParseErrors) Print() {
 		"Counted barcode errors:      %v\n\n",
 		p.correct, p.constant, p.sample, p.counted)
 }
+
+type MaxBarcodeErrorsAllowed struct {
+	Sample       int
+	sampleSize   int
+	Counted      int
+	countedSizes []int
+	Constant     int
+	constantSize int
+}
+
+func NewMaxErrors(sample int, counted int, constant int, format input.SequenceFormat) MaxBarcodeErrorsAllowed {
+	var maxErrors MaxBarcodeErrorsAllowed
+	maxErrors.sampleSize = format.SampleSize
+	maxErrors.countedSizes = format.CountedBarcodesSizes
+	maxErrors.constantSize = format.ConstantSize
+	if sample == -1 {
+		maxErrors.Sample = format.SampleSize / 5
+	} else {
+		maxErrors.Sample = sample
+	}
+
+	if counted == -1 {
+		var averageCountedSize int
+		for _, countedSize := range format.CountedBarcodesSizes {
+			averageCountedSize += countedSize
+		}
+		averageCountedSize /= len(format.CountedBarcodesSizes)
+		maxErrors.Counted = averageCountedSize / 5
+	} else {
+		maxErrors.Counted = counted
+	}
+
+	if constant == -1 {
+		maxErrors.Constant = format.ConstantSize / 5
+	} else {
+		maxErrors.Constant = constant
+	}
+	return maxErrors
+}
+func (m MaxBarcodeErrorsAllowed) Print() {
+	fmt.Printf("-BARCODE INFO-\n"+
+		"Constant region size: %v\n"+
+		"Maximum mismatches allowed per sequence: %v\n"+
+		"--------------------------------------------------------------\n"+
+		"Sample barcode size: %v\n"+
+		"Maximum mismatches allowed per sequence: %v\n"+
+		"--------------------------------------------------------------\n"+
+		"Barcode sizes: %v\n"+
+		"Maximum mismatches allowed per barcode sequence: %v\n"+
+		"--------------------------------------------------------------\n\n",
+		m.constantSize, m.Constant, m.sampleSize, m.Sample, m.countedSizes, m.Counted)
+
+}

@@ -30,6 +30,9 @@ func main() {
 
 	var seqErrors results.ParseErrors
 
+	maxErrors := results.NewMaxErrors(args.SampleErrors, args.BarcodesErrors, args.ConstantErrors, formatInfo)
+	maxErrors.Print()
+
 	countedBarcodes := input.NewCountedBarcodes(args.CountedBarcodesPath, formatInfo.CountedBarcodeNum)
 
 	sequences := make(chan string)
