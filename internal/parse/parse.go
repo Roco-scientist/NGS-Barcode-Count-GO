@@ -7,36 +7,62 @@ import (
 	"sync"
 )
 
+// ParseSequences iterates over the sequences which are added to a channel by a reader thread,
+// and then finds the barcodes within the sequence and, sequening errors are not above the threshold,
+// will add the counted barcode to the results.  This is meant to be threadsafe, so it can be spawned
+// multiple times to decrease computation time
 func ParseSequences(
+	// sequences is a channel which holds the sequences read by input.ReadFastq
 	sequences chan string,
 	wg *sync.WaitGroup,
+	// counts is the struct which holds the counted results
 	counts *results.Counts,
+	// format is a struct which holds information essential for finding barcodes and do sequence error correction
+	// This includes the regex used to search for barcodes
 	format input.SequenceFormat,
+	// sampleBarcodes holds barcode conversion to ID for samples
 	sampleBarcodes input.SampleBarcodes,
+	// countedBarcodesStruct holds barcode conversion to id for counted barcodes
 	countedBarcodesStruct input.CountedBarcodes,
+	// seqErrors is a struct which keeps track of the quantity of seequencing errors
 	seqErrors *results.ParseErrors,
 ) {
 	defer wg.Done()
+	// a map:struct is created to check whether or not a sampleBarcode exists.  This is used in place
+	// of what would normally be a set.  Faster than checking the contents of a slice
 	sampleBarcodesCheck := make(map[string]struct{})
 	for _, sampleBarcode := range sampleBarcodes.Barcodes {
 		sampleBarcodesCheck[sampleBarcode] = struct{}{}
 	}
+
 	for sequence := range sequences {
+		// If the regex does not work on the sequence, there's a good chance there are sequencing sequencing
+		// errors within the constant region.
 		if !format.FormatRegex.MatchString(sequence) {
 			sequence = fixConstant(sequence, format.FormatString, format.ConstantSize/5)
 		}
+
 		sequenceMatch := format.FormatRegex.FindStringSubmatch(sequence)
-		if sequenceMatch != nil {
+		if sequenceMatch == nil {
+			seqErrors.AddConstantError()
+		} else {
 			var sampleBarcode, randomBarcode, countedBarcodes, countedBarcode string
+			// countedBarcodeNum holds the number of counted barcode that should be used as an index
+			// for the current barcode iteration
 			countedBarcodeNum := 0
+			// sequenceFail is used to end the iteratoin early if any of the sequencing errors fail to get fixed
 			sequenceFail := false
 			for i, name := range format.FormatRegex.SubexpNames() {
+				// the barcode name from the capture group exists as either sample, random, or counted_#
 				switch {
 				case name == "sample":
 					sampleBarcode = sequenceMatch[i]
-					if _, ok := sampleBarcodesCheck[sampleBarcode]; !ok {
-						sampleBarcode = fixSequence(sampleBarcode, sampleBarcodes.Barcodes, len(sampleBarcode)/5)
+					if sampleBarcodes.Included {
+						if _, ok := sampleBarcodesCheck[sampleBarcode]; !ok {
+							sampleBarcode = fixSequence(sampleBarcode, sampleBarcodes.Barcodes, len(sampleBarcode)/5)
+						}
 					}
+					// If fixSequence does not find a best match, it returns an empty string
 					if sampleBarcode == "" {
 						seqErrors.AddSampleError()
 						sequenceFail = true
@@ -48,9 +74,13 @@ func ParseSequences(
 						countedBarcodes += ","
 					}
 					countedBarcode = sequenceMatch[i]
-					if _, ok := countedBarcodesStruct.Conversion[countedBarcodeNum][countedBarcode]; !ok {
-						countedBarcode = fixSequence(countedBarcode, countedBarcodesStruct.Barcodes[countedBarcodeNum], len(countedBarcode)/5)
+					// When a counted barcodes file is not included hte conversion is not created
+					if countedBarcodesStruct.Included {
+						if _, ok := countedBarcodesStruct.Conversion[countedBarcodeNum][countedBarcode]; !ok {
+							countedBarcode = fixSequence(countedBarcode, countedBarcodesStruct.Barcodes[countedBarcodeNum], len(countedBarcode)/5)
+						}
 					}
+					// If fixSequence does not find a best match, it returns an empty string
 					if countedBarcode == "" {
 						seqErrors.AddCountedError()
 						sequenceFail = true
@@ -63,12 +93,11 @@ func ParseSequences(
 					break
 				}
 			}
+			// If none of the error corrections failed and good matches were found, add the count
 			if !sequenceFail {
-				counts.AddCount(sampleBarcode, countedBarcodes, randomBarcode)
+				counts.AddCount(sampleBarcode, countedBarcodes, randomBarcode, sampleBarcodes.Included)
 				seqErrors.AddCorrect()
 			}
-		} else {
-			seqErrors.AddConstantError()
 		}
 	}
 }
@@ -107,7 +136,7 @@ func fixSequence(querySequence string, subjectSequences []string, maxErrors int)
 	for _, subjectSequence := range subjectSequences {
 		mismatches = 0
 		for i := 0; i < len(querySequence); i++ {
-			if  querySequence[i] != subjectSequence[i] && querySequence[i] != 'N' && subjectSequence[i] != 'N' {
+			if querySequence[i] != subjectSequence[i] && querySequence[i] != 'N' && subjectSequence[i] != 'N' {
 				mismatches++
 			}
 			if mismatches > bestMismatches {

@@ -12,6 +12,8 @@ import (
 	"sync"
 )
 
+const NoSampleName = "barcode"
+
 // SequenceFormat holds values which are used to find the barcodes within each sequencing read.
 type SequenceFormat struct {
 	// FormatRegex holds the regex which includes the search groups for the barcodes
@@ -21,6 +23,7 @@ type SequenceFormat struct {
 	// ConstantSize is how many nucleotides are not barcodes in order to calculate the amount of allowed errors within the constant region.
 	// Defaulted to 20% max
 	ConstantSize int
+	CountedBarcodeNum int
 }
 
 // AddSearchRegex method uses the format scheme within the format file to create the FormatRegex, FormatString, and ConstantSize.
@@ -43,8 +46,6 @@ func (f *SequenceFormat) AddSearchRegex(formatFilePath string) {
 	digitSearch := regexp.MustCompile(`\d+`)
 	// barcodeSearch finds different format types, ie barcode or constant region, in order to iterate over each
 	barcodeSearch := regexp.MustCompile(`(?i)(\{\d+\})|(\[\d+\])|(\(\d+\))|N+|[ATGC]+`)
-	// countedBarcodeNum is increased after each barcode is found.  This is used for capture group name
-	countedBarcodeNum := 0
 	// regexString is built with capture groups then used for the regex object
 	var regexString string
 	// iterates through each barcodeSearch group and create the regex string
@@ -56,8 +57,8 @@ func (f *SequenceFormat) AddSearchRegex(formatFilePath string) {
 		if strings.Contains(group, "[") {
 			groupName = "sample"
 		} else if strings.Contains(group, "{") {
-			countedBarcodeNum++
-			groupName = fmt.Sprintf("counted_%v", countedBarcodeNum)
+			f.CountedBarcodeNum++
+			groupName = fmt.Sprintf("counted_%v", f.CountedBarcodeNum)
 		} else if strings.Contains(group, "(") {
 			groupName = "random"
 		}
@@ -99,21 +100,28 @@ type SampleBarcodes struct {
 	Conversion map[string]string
 	// Barcodes is a slice of sample DNA barcodes
 	Barcodes []string
+	Included bool
 }
 
 // NewSampleBarcodes creates a new SampleBarcodes struct using the sample barcodes file
 func NewSampleBarcodes(sampleFilePath string) SampleBarcodes {
+	var sampleBarcodes SampleBarcodes
+	sampleBarcodes.Conversion = make(map[string]string)
+	if len(sampleFilePath) == 0 {
+		sampleBarcodes.Conversion[NoSampleName] = NoSampleName
+		sampleBarcodes.Barcodes = append(sampleBarcodes.Barcodes, NoSampleName)
+		return sampleBarcodes
+	}else{
+		sampleBarcodes.Included = true
+	}
 	file, err := os.Open(sampleFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
-	var sampleBarcodes SampleBarcodes
-
 	scanner := bufio.NewScanner(file)
 	scanner.Scan() // remove the header
-	sampleBarcodes.Conversion = make(map[string]string)
 	for scanner.Scan() {
 		row := strings.Split(scanner.Text(), ",")
 		sampleBarcodes.Conversion[row[0]] = row[1]
@@ -131,48 +139,43 @@ type CountedBarcodes struct {
 	Barcodes [][]string
 	// NumBarcodes is how many counted barcodes are within each sequencing read.
 	NumBarcodes int
+	Included bool
 }
 
 // NewCountedBarcodes creates a CountedBarcodes struct with the information within the counted barcodes file
-func NewCountedBarcodes(countedBcFilePath string) CountedBarcodes {
+func NewCountedBarcodes(countedBcFilePath string, numBarcodes int) CountedBarcodes {
+	var countedBarcodes CountedBarcodes
+	countedBarcodes.NumBarcodes = numBarcodes
+
+	if len(countedBcFilePath) == 0 {
+		return countedBarcodes
+	}else{
+		countedBarcodes.Included = true
+	}
 	file, err := os.Open(countedBcFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
-	var countedBarcodes CountedBarcodes
-
-	scanner := bufio.NewScanner(file)
-	scanner.Scan() // remove the header
-	var barcodeNums []int
-	var rows []string
-	// First iterate through all lines and hold the information.  This is done so that the total number of
-	// counted barcodes can be retrieved and all data can be placed within slices with the index being the
-	// the sequential number of the counted barcode
-	for scanner.Scan() {
-		rowSplit := strings.Split(scanner.Text(), ",")
-		barcodeNum, _ := strconv.Atoi(rowSplit[2])
-		barcodeNums = append(barcodeNums, barcodeNum)
-		rows = append(rows, rowSplit[0]+","+rowSplit[1]+","+rowSplit[2])
-	}
-	countedBarcodes.NumBarcodes = max(barcodeNums)
-
-	// After knowing how many total counted barcodes per sequencing read, create slices of maps and string slices
-	// where the index is the counted barcode number
+	// Slices with the length of the counted barcodes are created to have the counted barcode number be the index
 	for i := 0; i < countedBarcodes.NumBarcodes; i++ {
 		countedBarcodes.Conversion = append(countedBarcodes.Conversion, make(map[string]string))
 		countedBarcodes.Barcodes = append(countedBarcodes.Barcodes, make([]string, 0))
 	}
 
-	// Insert all data from the counted barcode file gather previously
-	for _, row := range rows {
-		rowSplit := strings.Split(row, ",")
+	scanner := bufio.NewScanner(file)
+	scanner.Scan() // remove the header
+	// Data needs to be inserted into the conversion map slice and the barcodes slice from the counted barcode file.
+	// The sequential barcode number is used as the index
+	for scanner.Scan() {
+		rowSplit := strings.Split(scanner.Text(), ",")
 		barcodeNum, _ := strconv.Atoi(rowSplit[2])
 		insertNum := barcodeNum - 1
 		countedBarcodes.Conversion[insertNum][rowSplit[0]] = rowSplit[1]
 		countedBarcodes.Barcodes[insertNum] = append(countedBarcodes.Barcodes[insertNum], rowSplit[0])
 	}
+
 	return countedBarcodes
 }
 

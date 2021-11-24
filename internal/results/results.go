@@ -14,10 +14,12 @@ import (
 	"github.com/Roco-scientist/barcode-count-go/internal/input"
 )
 
+const NoSampleName = "barcode"
+
 type Counts struct {
-	mu        sync.Mutex
+	mu       sync.Mutex
 	NoRandom map[string]map[string]int
-	Random    map[string]map[string]map[string]bool
+	Random   map[string]map[string]map[string]bool
 }
 
 func NewCount(sampleBarcodes []string) *Counts {
@@ -31,7 +33,10 @@ func NewCount(sampleBarcodes []string) *Counts {
 	return &count
 }
 
-func (c *Counts) AddCount(sampleBarcode string, countedBarcodes string, randomBarcode string) {
+func (c *Counts) AddCount(sampleBarcode string, countedBarcodes string, randomBarcode string, samplBarcodeIncluded bool) {
+	if !samplBarcodeIncluded {
+		sampleBarcode = NoSampleName
+	}
 	if len(randomBarcode) == 0 {
 		c.mu.Lock()
 		c.NoRandom[sampleBarcode][countedBarcodes]++
@@ -86,7 +91,12 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, countedBarcod
 		total := 0
 		for countedBarcodes, count := range c.NoRandom[sampleBarcode] {
 			total++
-			convertedBarcodes := convertCounted(countedBarcodes, countedBarcodesStruct)
+			var convertedBarcodes string
+			if countedBarcodesStruct.Included {
+				convertedBarcodes = convertCounted(countedBarcodes, countedBarcodesStruct)
+			} else {
+				convertedBarcodes = countedBarcodes
+			}
 			sampleOut.WriteString("\n" + convertedBarcodes + "," + strconv.Itoa(count))
 			if merge {
 				if _, ok := countedBarcodesFinished[countedBarcodes]; !ok {
@@ -98,12 +108,12 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, countedBarcod
 					countedBarcodesFinished[countedBarcodes] = true
 				}
 			}
-			if total % 10000 == 0{
+			if total%10000 == 0 {
 				fmt.Printf("\rTotal: %v", total)
 			}
 		}
 		fmt.Printf("\rTotal: %v\nWriting...\n", total)
-		outFileName := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + ".counts.csv"
+		outFileName := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + "_counts.csv"
 		file, err := os.Create(outFileName)
 		if err != nil {
 			log.Fatal(err)
@@ -138,10 +148,10 @@ func convertCounted(countedBarcodes string, countedBarcodesStruct input.CountedB
 }
 
 type ParseErrors struct {
-	correct     int
-	constant    int
-	sample      int
-	counted     int
+	correct    int
+	constant   int
+	sample     int
+	counted    int
 	correctMu  sync.Mutex
 	constantMu sync.Mutex
 	sampleMu   sync.Mutex
