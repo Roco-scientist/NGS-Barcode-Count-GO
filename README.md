@@ -6,18 +6,16 @@ For DEL analysis, a companion python package was created: [DEL-Analysis](https:/
 Multithreaded and low resource use.  Uses one thread to read and the rest to process the data, so at least a 2 threaded machine is essential.
 This program does not store all data within RAM but instead sequentially processes the sequencing data in order to remain memory efficient.  
   
-~~Error handling is defaulted at 20% maximum sequence error per constant region and barcode.  This can be changed through CLI arguments.  The algorithm fixes any sequenced constant region or barcode with the best match possible.  If there are two or more best matches,
-it is not counted.~~  
+Error handling is defaulted at 20% maximum sequence error per constant region and barcode.  This can be changed through CLI arguments.  The algorithm fixes any sequenced constant region or barcode with the best match possible.  If there are two or more best matches,
+it is not counted.  
   
 ~~If there is a random barcode included, sequences with a duplicated random barcode are not counted.~~  
   
 Go refactoring of [NGS-Barcode-Count](https://github.com/Roco-scientist/NGS-Barcode-Count-dummy), which is written in Rust. Features not yet refactored:  
 - Single and double barcode enrichment
-- Lack of sample barcode and counted barcode file requirement
 - Use of a random barcode
 - Stat file output
 - Sequencing read quality filter
-- Changing the error hanlding percentage/amount
   
 Inspired by and some ideas adopted from [decode](https://github.com/sunghunbae/decode)  
   

@@ -22,8 +22,10 @@ type SequenceFormat struct {
 	FormatString string
 	// ConstantSize is how many nucleotides are not barcodes in order to calculate the amount of allowed errors within the constant region.
 	// Defaulted to 20% max
-	ConstantSize int
-	CountedBarcodeNum int
+	ConstantSize         int
+	SampleSize           int
+	CountedBarcodesSizes []int
+	CountedBarcodeNum    int
 }
 
 // AddSearchRegex method uses the format scheme within the format file to create the FormatRegex, FormatString, and ConstantSize.
@@ -51,21 +53,28 @@ func (f *SequenceFormat) AddSearchRegex(formatFilePath string) {
 	// iterates through each barcodeSearch group and create the regex string
 	for _, group := range barcodeSearch.FindAllString(formatText, -1) {
 		// groupName is the capture group name for the regex object
-		var groupName string
+		var groupName, digitsString string
+		var digits int
 		// if the group contains any of the bracket styles that indicate a barcode,
 		// save the groupName then create the named capture group
 		if strings.Contains(group, "[") {
 			groupName = "sample"
+			digitsString = digitSearch.FindString(group)
+			digits, _ = strconv.Atoi(digitsString)
+			f.SampleSize = digits
 		} else if strings.Contains(group, "{") {
 			f.CountedBarcodeNum++
 			groupName = fmt.Sprintf("counted_%v", f.CountedBarcodeNum)
+			digitsString = digitSearch.FindString(group)
+			digits, _ = strconv.Atoi(digitsString)
+			f.CountedBarcodesSizes = append(f.CountedBarcodesSizes, digits)
 		} else if strings.Contains(group, "(") {
 			groupName = "random"
+			digitsString = digitSearch.FindString(group)
+			digits, _ = strconv.Atoi(digitsString)
 		}
 
 		if len(groupName) != 0 {
-			digitsString := digitSearch.FindString(group)
-			digits, _ := strconv.Atoi(digitsString)
 			// Add as many Ns as there are nucleotides within the barcocde to the format string
 			for i := 0; i < digits; i++ {
 				f.FormatString += "N"
@@ -111,7 +120,7 @@ func NewSampleBarcodes(sampleFilePath string) SampleBarcodes {
 		sampleBarcodes.Conversion[NoSampleName] = NoSampleName
 		sampleBarcodes.Barcodes = append(sampleBarcodes.Barcodes, NoSampleName)
 		return sampleBarcodes
-	}else{
+	} else {
 		sampleBarcodes.Included = true
 	}
 	file, err := os.Open(sampleFilePath)
@@ -139,7 +148,7 @@ type CountedBarcodes struct {
 	Barcodes [][]string
 	// NumBarcodes is how many counted barcodes are within each sequencing read.
 	NumBarcodes int
-	Included bool
+	Included    bool
 }
 
 // NewCountedBarcodes creates a CountedBarcodes struct with the information within the counted barcodes file
@@ -149,7 +158,7 @@ func NewCountedBarcodes(countedBcFilePath string, numBarcodes int) CountedBarcod
 
 	if len(countedBcFilePath) == 0 {
 		return countedBarcodes
-	}else{
+	} else {
 		countedBarcodes.Included = true
 	}
 	file, err := os.Open(countedBcFilePath)
@@ -247,7 +256,7 @@ func ReadFastq(fastqPath string, sequences chan string, wg *sync.WaitGroup) int 
 		if err := scanner.Err(); err != nil {
 			log.Fatal(err)
 		}
-	}else{
+	} else {
 		log.Fatal("fastq file must end with 'gz' or 'fastq'")
 	}
 

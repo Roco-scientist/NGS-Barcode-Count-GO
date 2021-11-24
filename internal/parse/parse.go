@@ -26,6 +26,8 @@ func ParseSequences(
 	countedBarcodesStruct input.CountedBarcodes,
 	// seqErrors is a struct which keeps track of the quantity of seequencing errors
 	seqErrors *results.ParseErrors,
+	// maxErrors holds the maximum sequencing errors allowed per barcode
+	maxErrors results.MaxBarcodeErrorsAllowed,
 ) {
 	defer wg.Done()
 	// a map:struct is created to check whether or not a sampleBarcode exists.  This is used in place
@@ -39,7 +41,7 @@ func ParseSequences(
 		// If the regex does not work on the sequence, there's a good chance there are sequencing sequencing
 		// errors within the constant region.
 		if !format.FormatRegex.MatchString(sequence) {
-			sequence = fixConstant(sequence, format.FormatString, format.ConstantSize/5)
+			sequence = fixConstant(sequence, format.FormatString, maxErrors.Constant)
 		}
 
 		sequenceMatch := format.FormatRegex.FindStringSubmatch(sequence)
@@ -59,7 +61,7 @@ func ParseSequences(
 					sampleBarcode = sequenceMatch[i]
 					if sampleBarcodes.Included {
 						if _, ok := sampleBarcodesCheck[sampleBarcode]; !ok {
-							sampleBarcode = fixSequence(sampleBarcode, sampleBarcodes.Barcodes, len(sampleBarcode)/5)
+							sampleBarcode = fixSequence(sampleBarcode, sampleBarcodes.Barcodes, maxErrors.Sample)
 						}
 					}
 					// If fixSequence does not find a best match, it returns an empty string
@@ -77,7 +79,7 @@ func ParseSequences(
 					// When a counted barcodes file is not included hte conversion is not created
 					if countedBarcodesStruct.Included {
 						if _, ok := countedBarcodesStruct.Conversion[countedBarcodeNum][countedBarcode]; !ok {
-							countedBarcode = fixSequence(countedBarcode, countedBarcodesStruct.Barcodes[countedBarcodeNum], len(countedBarcode)/5)
+							countedBarcode = fixSequence(countedBarcode, countedBarcodesStruct.Barcodes[countedBarcodeNum], maxErrors.Counted)
 						}
 					}
 					// If fixSequence does not find a best match, it returns an empty string

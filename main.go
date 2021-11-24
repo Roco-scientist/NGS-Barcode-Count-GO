@@ -30,6 +30,9 @@ func main() {
 
 	var seqErrors results.ParseErrors
 
+	maxErrors := results.NewMaxErrors(args.SampleErrors, args.BarcodesErrors, args.ConstantErrors, formatInfo)
+	maxErrors.Print()
+
 	countedBarcodes := input.NewCountedBarcodes(args.CountedBarcodesPath, formatInfo.CountedBarcodeNum)
 
 	sequences := make(chan string)
@@ -37,7 +40,7 @@ func main() {
 	go input.ReadFastq(args.FastqPath, sequences, &wg)
 	for i := 1; i < (args.Threads * 3); i++ {
 		wg.Add(1)
-		go parse.ParseSequences(sequences, &wg, counts, formatInfo, sampleBarcodes, countedBarcodes, &seqErrors)
+		go parse.ParseSequences(sequences, &wg, counts, formatInfo, sampleBarcodes, countedBarcodes, &seqErrors, maxErrors)
 	}
 	wg.Wait()
 	seqErrors.Print()
