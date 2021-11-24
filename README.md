@@ -1,5 +1,9 @@
 # barcode-count-go
-Fast and memory efficient DNA barcode counter and decoder for next generation sequencing data.  Includes error handling.  Works for DEL (DNA encoded libraries), high throughput CRISPR sequencing, barcode sequencing.  If the barcode file is included, the program will convert to barcode names and correct for errors. If a random barcode is included to collapse PCR duplicates, these duplicates will not be counted.  Parsing over 400 million sequencing reads took under a half hour with 8 threads and around 2GB of RAM use.  
+Fast and memory efficient DNA barcode counter and decoder for next generation sequencing data.
+Includes error handling.  Works for DEL (DNA encoded libraries), high throughput CRISPR sequencing, barcode sequencing.
+If the barcode file is included, the program will convert to barcode names and correct for errors.
+~~If a random barcode is included to collapse PCR duplicates, these duplicates will not be counted.~~
+Parsing over 400 million sequencing reads took under a half hour with 8 threads and around 2GB of RAM use.  
   
 For DEL analysis, a companion python package was created: [DEL-Analysis](https://github.com/Roco-scientist/DEL-Analysis)  
   
@@ -8,8 +12,6 @@ This program does not store all data within RAM but instead sequentially process
   
 Error handling is defaulted at 20% maximum sequence error per constant region and barcode.  This can be changed through CLI arguments.  The algorithm fixes any sequenced constant region or barcode with the best match possible.  If there are two or more best matches,
 it is not counted.  
-  
-~~If there is a random barcode included, sequences with a duplicated random barcode are not counted.~~  
   
 Go refactoring of [NGS-Barcode-Count](https://github.com/Roco-scientist/NGS-Barcode-Count-dummy), which is written in Rust. Features not yet refactored:  
 - Single and double barcode enrichment
