@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-const NoSampleName = "barcode_counts"
+const NoSampleName = "barcode"
 
 // SequenceFormat holds values which are used to find the barcodes within each sequencing read.
 type SequenceFormat struct {
