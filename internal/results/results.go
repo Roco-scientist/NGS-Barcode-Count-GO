@@ -14,7 +14,7 @@ import (
 	"github.com/Roco-scientist/barcode-count-go/internal/input"
 )
 
-const NoSampleName = "barcode_counts"
+const NoSampleName = "barcode"
 
 type Counts struct {
 	mu       sync.Mutex
@@ -113,7 +113,7 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, countedBarcod
 			}
 		}
 		fmt.Printf("\rTotal: %v\nWriting...\n", total)
-		outFileName := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + ".counts.csv"
+		outFileName := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + "_counts.csv"
 		file, err := os.Create(outFileName)
 		if err != nil {
 			log.Fatal(err)
