@@ -1,4 +1,4 @@
-# barcode-count-go
+# NGS-Barcode-Count-GO
 Fast and memory efficient DNA barcode counter and decoder for next generation sequencing data.
 Includes error handling.  Works for DEL (DNA encoded libraries), high throughput CRISPR sequencing, barcode sequencing.
 If the barcode file is included, the program will convert to barcode names and correct for errors.
