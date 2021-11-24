@@ -9,19 +9,19 @@ import (
 
 // Args holds all input argument information
 type Args struct {
-	FastqPath                string // fastq file path
-	FormatPath               string // format scheme file path
-	SampleBarcodesPath      string // sample barcode file path.  Optional
-	CountedBarcodesPath     string // building block barcode file path. Optional
-	OutputDir                string // output directory.  Deafaults to './'
-	Threads                   int    // Number of threads to use.  Defaults to number of threads on the machine
-	Prefix                    string // Prefix string for the output files
-	MergeOutput              bool   // Whether or not to create an additional output file that merges all samples
-	BarcodesErrors           int    // Optional input of how many errors are allowed in each building block barcode.  Defaults to 20% of the length
-	SampleErrors             int    // Optional input of how many errors are allowed in each sample barcode.  Defaults to 20% of the length
-	ConstantErrors           int    // Optional input of how many errors are allowed in each constant region barcode.  Defaults to 20% of the length
+	FastqPath              string // fastq file path
+	FormatPath             string // format scheme file path
+	SampleBarcodesPath     string // sample barcode file path.  Optional
+	CountedBarcodesPath    string // building block barcode file path. Optional
+	OutputDir              string // output directory.  Deafaults to './'
+	Threads                int    // Number of threads to use.  Defaults to number of threads on the machine
+	Prefix                 string // Prefix string for the output files
+	MergeOutput            bool   // Whether or not to create an additional output file that merges all samples
+	BarcodesErrors         int    // Optional input of how many errors are allowed in each building block barcode.  Defaults to 20% of the length
+	SampleErrors           int    // Optional input of how many errors are allowed in each sample barcode.  Defaults to 20% of the length
+	ConstantErrors         int    // Optional input of how many errors are allowed in each constant region barcode.  Defaults to 20% of the length
 	MinAverageQualityScore float32
-	Enrich                    bool
+	Enrich                 bool
 }
 
 // GetArgs retrieves all arguments passed from the CLI
@@ -44,7 +44,13 @@ func GetArgs() Args {
 	args.CountedBarcodesPath = *countedPath
 	args.SampleBarcodesPath = *samplePath
 	args.OutputDir = *outputDir
-	args.MergeOutput = *mergeOutput
+	if *samplePath != "" && *mergeOutput {
+		args.MergeOutput = *mergeOutput
+	} else if *mergeOutput {
+		l := log.New(os.Stderr, "", 0)
+		l.Println("Sample conversion file needed to merge output.  --merge-output flag set to false")
+		args.MergeOutput = false
+	}
 	args.Threads = *threads
 	return args
 }
