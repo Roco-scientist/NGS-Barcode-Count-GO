@@ -97,13 +97,17 @@ func ParseSequences(
 			}
 			// If none of the error corrections failed and good matches were found, add the count
 			if !sequenceFail {
-				counts.AddCount(sampleBarcode, countedBarcodes, randomBarcode, sampleBarcodes.Included)
-				seqErrors.AddCorrect()
+				if inserted := counts.AddCount(sampleBarcode, countedBarcodes, randomBarcode, sampleBarcodes.Included); inserted {
+					seqErrors.AddCorrect()
+				} else {
+					seqErrors.AddDuplicateError()
+				}
 			}
 		}
 	}
 }
 
+// fixConstant fixes the constant region of the sequence when the regex search does not match
 func fixConstant(querySequence string, formatString string, maxErrors int) string {
 	lengthDiff := len(querySequence) - len(formatString)
 	var possibleSeqs []string
@@ -118,6 +122,9 @@ func fixConstant(querySequence string, formatString string, maxErrors int) strin
 	return ""
 }
 
+// swapBarcodes creates a fixed sequence. It does this by using the formatString which
+// contains the sequencing format where the barcodes are replaced by Ns.  This funciton
+// swaps out the Ns for the barcodes found within the sequencing read.
 func swapBarcodes(bestSeqeunce string, formatString string) string {
 	var fixedSequence string
 	for i := 0; i < len(formatString); i++ {
@@ -130,6 +137,9 @@ func swapBarcodes(bestSeqeunce string, formatString string) string {
 	return fixedSequence
 }
 
+// fixSequence iterates through subjectSequences to find the best match to the querySequence.  maxErrors is 
+// passed to this function to make sure that the match is close enough, ie, you would not want to call a match
+// within which only have of the nucleotides match.  The default of NGS-Barcode-Count is 20% errors or len(querySequence)/5
 func fixSequence(querySequence string, subjectSequences []string, maxErrors int) string {
 	bestMismatches := maxErrors + 1
 	var bestMatch string
