@@ -42,10 +42,10 @@ git clone https://github.com/Roco-scientist/barcode-count-go.git
 cd barcode-count-go
 ```
 
-Build the `barcode-count-go` executable:
+Build the `barcode-count` executable:
 
 ```
-go build
+go build -o barcode-count
 ```
 
 ## Files Needed
@@ -102,13 +102,13 @@ at 1. For example, if there are a total of 3 barcodes, which may be the case wit
 representing one of the three barcodes. For CRISPR or barcode seq, where there may only be one barcode to count, this column would be all 1s.
 
 ## Run
-After compilation, the `barcode-count-go` binary can be moved anywhere.
+After compilation, the `barcode-count` binary can be moved anywhere.
 \
 \
 Run barcode-count-go  
 
 ```
-./barcode-count-go --fastq <fastq_file> \
+./barcode-count --fastq <fastq_file> \
 	--sample-barcodes <sample_barcodes_file> \
 	--sequence-format <sequence_format_file> \
 	--counted-barcodes <counted_barcodes_file> \
