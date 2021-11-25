@@ -19,7 +19,6 @@ The algorithm is defaulted to not filter unless the --min_quality argument is ca
 The scores used are after ascii conversion and 33 subtraction.~~  
   
 Go refactoring of [NGS-Barcode-Count](https://github.com/Roco-scientist/NGS-Barcode-Count), which is written in Rust. Features not yet refactored:  
-- Single and double barcode enrichment
 - Stat file output
 - Sequencing read quality filter
   
@@ -113,7 +112,8 @@ Run barcode-count-go
 	--counted-barcodes <counted_barcodes_file> \
 	--output-dir <output_dir> \
 	--threads <num_of_threads> \
-	--merge-output
+	--merge-output \
+	--enrich
 ```
 
 - --counted-barcodes is optional.  If it is not used, the output counts uses the DNA barcode to count with no error handling on these barcodes.
@@ -121,6 +121,7 @@ Run barcode-count-go
 - --output-dir defaults to the current directory if not used.
 - --threads defaults to the number of cores on the machine.
 - --merge-output flag that merges the output csv file so that each sample has one column
+- --enrich argument flag that will find the counts for each barcode if there are 2 or more counted barcodes included, and output the file. Also will do the same with double barcodes if there are 3+. Useful for DEL
 
 ### Output files
 Each sample name will get a file in the default format of year-month-day_<sample_name>_counts.csv in the following format (for 3 counted barcodes):

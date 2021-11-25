@@ -69,8 +69,7 @@ func main() {
 	fmt.Printf("Compute time: %v\n\n", compTime)
 
 	fmt.Println("-WRITING COUNTS-")
-	enrich := false
-	counts.WriteCsv(args.OutputDir, args.MergeOutput, enrich, countedBarcodes, sampleBarcodes)
+	counts.WriteCsv(args.OutputDir, args.MergeOutput, args.Enrich, countedBarcodes, sampleBarcodes)
 
 	totTime := elapsedTime(start)
 	fmt.Printf("Total time: %v\n", totTime)
