@@ -206,7 +206,7 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, countedBarcod
 			totalSingle, totalDouble := c.gatherEnriched(sampleBarcode)
 
 			// After the gathering is finished, the final count is printed
-			fmt.Printf("\rTotal single enriched: %v\nTotal double enriched: %\n", totalSingle, totalDouble)
+			fmt.Printf("\rTotal single enriched: %v\nTotal double enriched: %v\n", totalSingle, totalDouble)
 			if totalSingle != 0 {
 				outFileNameSingle := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + "_counts.Single.csv"
 				file, err := os.Create(outFileNameSingle)
