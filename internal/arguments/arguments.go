@@ -34,6 +34,7 @@ func GetArgs() Args {
 	samplePath := parser.String("s", "sample-barcodes", &argparse.Options{Help: "Sample barcodes file"})
 	outputDir := parser.String("o", "output-dir", &argparse.Options{Default: "./", Help: "Directory to output the counts to"})
 	mergeOutput := parser.Flag("m", "merge-output", &argparse.Options{Help: "Merge sample output counts into a single file.  Not necessary when there is only one sample"})
+	enrich := parser.Flag("e", "enrich", &argparse.Options{Help: "Create output files of enrichment for single and double synthons/barcodes"})
 	threads := parser.Int("t", "threads", &argparse.Options{Default: runtime.NumCPU(), Help: "Number of threads"})
 	barcodeErrors := parser.Int("", "max-errors-counted-barcode", &argparse.Options{Default: -1, Help: "Maximimum number of sequence errors allowed within each counted barcode. Defaults to 20% of the total."})
 	sampleErrors := parser.Int("", "max-errors-sample", &argparse.Options{Default: -1, Help: "Maximimum number of sequence errors allowed within the sample barcode. Defaults to 20% of the total."})
@@ -54,6 +55,7 @@ func GetArgs() Args {
 		l.Println("Sample conversion file needed to merge output.  --merge-output flag set to false")
 		args.MergeOutput = false
 	}
+	args.Enrich = *enrich
 	args.Threads = *threads
 	args.BarcodesErrors = *barcodeErrors
 	args.SampleErrors = *sampleErrors

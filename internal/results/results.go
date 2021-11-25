@@ -21,14 +21,26 @@ const NoSampleName = "barcode"
 // This map holds SampleBarcode:CommaSeparatedCountedBarcodes:RandomBarcodes:true.  Since RandomBarcodes is a map key, this only
 // holds unique RandomBarcodes causing duplicates to be discarded.
 type Counts struct {
-	mu                      sync.Mutex
-	NoRandom                map[string]map[string]int
-	Random                  map[string]map[string]map[string]bool
+	mu sync.Mutex
+	// NoRandom holds counts when there is not a random barcode
+	NoRandom map[string]map[string]int
+	// Random holds counts when there is a random barcode
+	Random map[string]map[string]map[string]bool
+	// single holds counts for single barcode enrichment
+	single map[string]map[string]int
+	// double holds counts for double barcode enrichment
+	double                  map[string]map[string]int
 	sampleOut               strings.Builder
+	sampleOutSingle         strings.Builder
+	sampleOutDouble         strings.Builder
 	mergeOut                strings.Builder
+	mergeOutSingle          strings.Builder
+	mergeOutDouble          strings.Builder
 	countedBarcodesFinished map[string]bool
 	sampleBarcodesSorted    []string
 	merge                   bool
+	enrich                  bool
+	barcodeNum              int
 }
 
 // NewCount creates a new Counts struct.  It inserts the sampleBarcodes into NoRandom and Random maps to prevent a nil map insert
@@ -36,9 +48,13 @@ type Counts struct {
 func NewCount(sampleBarcodes []string) *Counts {
 	var count Counts
 	count.NoRandom = make(map[string]map[string]int)
+	count.single = make(map[string]map[string]int)
+	count.double = make(map[string]map[string]int)
 	count.Random = make(map[string]map[string]map[string]bool)
 	for _, sampleBarcode := range sampleBarcodes {
 		count.NoRandom[sampleBarcode] = make(map[string]int)
+		count.single[sampleBarcode] = make(map[string]int)
+		count.double[sampleBarcode] = make(map[string]int)
 		count.Random[sampleBarcode] = make(map[string]map[string]bool)
 	}
 	return &count
@@ -82,6 +98,7 @@ func (c *Counts) AddCount(sampleBarcode string, countedBarcodes string, randomBa
 // split when starting to need to use either map due to the different formats of the two datasets
 func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, countedBarcodesStruct input.CountedBarcodes, sampleBarcodes input.SampleBarcodes) {
 	c.merge = merge
+	c.enrich = enrich
 
 	// sampleBarcodes will be unordered.  The following orders the sampleBarcodes by the order of the sampleIDs.  This is necessary
 	// for clean merged file output
@@ -163,6 +180,87 @@ func (c *Counts) WriteCsv(outpath string, merge bool, enrich bool, countedBarcod
 		}
 		c.mergeOut.Reset()
 	}
+	if c.enrich {
+		if c.merge {
+			// countedBarcodesFinished holds what comma separated counted barcodes have already been done.  This is
+			// used while creating the merge file so that countedBarcodes are not repeatedly counted
+			for k := range c.countedBarcodesFinished {
+				delete(c.countedBarcodesFinished, k)
+			}
+
+			mergeHeader := headerStart
+			for i, sampleId := range sampleIds {
+				if i != 0 {
+					mergeHeader += ","
+				}
+				mergeHeader += sampleId
+			}
+			c.mergeOutSingle.WriteString(mergeHeader)
+			c.mergeOutDouble.WriteString(mergeHeader)
+		}
+		for _, sampleBarcode := range c.sampleBarcodesSorted {
+			fmt.Printf("Gathering for single/double enriched %v\n", sampleBarcodes.Conversion[sampleBarcode])
+			c.sampleOutSingle.WriteString(sampleHeader)
+			c.sampleOutDouble.WriteString(sampleHeader)
+
+			totalSingle, totalDouble := c.gatherEnriched(sampleBarcode)
+
+			// After the gathering is finished, the final count is printed
+			fmt.Printf("\rTotal single enriched: %v\nTotal double enriched: %\n", totalSingle, totalDouble)
+			if totalSingle != 0 {
+				outFileNameSingle := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + "_counts.Single.csv"
+				file, err := os.Create(outFileNameSingle)
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, writeErr := file.WriteString(c.sampleOutSingle.String())
+				if writeErr != nil {
+					log.Fatal(err)
+				}
+				c.sampleOutSingle.Reset()
+			}
+			if totalDouble != 0 {
+				outFileNameDouble := outpath + today + "_" + sampleBarcodes.Conversion[sampleBarcode] + "_counts.Double.csv"
+				file, err := os.Create(outFileNameDouble)
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, writeErr := file.WriteString(c.sampleOutDouble.String())
+				if writeErr != nil {
+					log.Fatal(err)
+				}
+				c.sampleOutDouble.Reset()
+			}
+		}
+		fmt.Println()
+		// If merge is called, write the merge file
+		if c.merge {
+			if c.barcodeNum > 1 {
+				mergeFileNameSingle := outpath + today + "_counts.all.Single.csv"
+				mergeFile, mergeErr := os.Create(mergeFileNameSingle)
+				if mergeErr != nil {
+					log.Fatal(mergeErr)
+				}
+				_, mergeWriteErr := mergeFile.WriteString(c.mergeOutSingle.String())
+				if mergeWriteErr != nil {
+					log.Fatal(mergeWriteErr)
+				}
+				c.mergeOutSingle.Reset()
+			}
+			if c.barcodeNum > 2 {
+				mergeFileNameDouble := outpath + today + "_counts.all.Double.csv"
+				mergeFile, mergeErr := os.Create(mergeFileNameDouble)
+				if mergeErr != nil {
+					log.Fatal(mergeErr)
+				}
+				_, mergeWriteErr := mergeFile.WriteString(c.mergeOutDouble.String())
+				if mergeWriteErr != nil {
+					log.Fatal(mergeWriteErr)
+				}
+				c.mergeOutDouble.Reset()
+			}
+		}
+	}
 }
 
 // gatherCounts is a method for gathering all counts into a comma separated string which, when written to a file,
@@ -187,6 +285,9 @@ func (c *Counts) gatherCounts(sampleBarcode string, countedBarcodesStruct input.
 				c.mergeOut.WriteString(mergeRow)
 				c.countedBarcodesFinished[countedBarcodes] = true
 			}
+		}
+		if c.enrich {
+			c.addEnrichment(sampleBarcode, convertedBarcodes, count)
 		}
 		if total%10000 == 0 {
 			fmt.Printf("\rTotal: %v", total)
@@ -220,6 +321,9 @@ func (c *Counts) gatherRandom(sampleBarcode string, countedBarcodesStruct input.
 				c.countedBarcodesFinished[countedBarcodes] = true
 			}
 		}
+		if c.enrich {
+			c.addEnrichment(sampleBarcode, convertedBarcodes, count)
+		}
 		if total%10000 == 0 {
 			fmt.Printf("\rTotal: %v", total)
 		}
@@ -239,6 +343,87 @@ func convertCounted(countedBarcodes string, countedBarcodesStruct input.CountedB
 		convertedBarcodes += countedBarcodesStruct.Conversion[i][countedBarcode]
 	}
 	return convertedBarcodes
+}
+
+func (c *Counts) addEnrichment(sampleBarcode string, convertedBarcodes string, count int) {
+	barcodesSplit := strings.Split(convertedBarcodes, ",")
+	c.barcodeNum = len(barcodesSplit)
+	if c.barcodeNum > 1 {
+		for i, barcode := range barcodesSplit {
+			var barcodeString string
+			for j := 0; j < c.barcodeNum; j++ {
+				if j != 0 {
+					barcodeString += ","
+				}
+				if i == j {
+					barcodeString += barcode
+				}
+			}
+			c.single[sampleBarcode][barcodeString] += count
+		}
+	}
+	if c.barcodeNum > 2 {
+		for firstBarcodeIndex := 0; firstBarcodeIndex < (c.barcodeNum - 1); firstBarcodeIndex++ {
+			for nextBarcodeAdd := 1; nextBarcodeAdd < (c.barcodeNum - firstBarcodeIndex); nextBarcodeAdd++ {
+				var doubleBarcodeString string
+				for columnIndex := 0; columnIndex < c.barcodeNum; columnIndex++ {
+					if columnIndex != 0 {
+						doubleBarcodeString += ","
+					}
+					if columnIndex == firstBarcodeIndex {
+						doubleBarcodeString += barcodesSplit[firstBarcodeIndex]
+					}
+					if columnIndex == (firstBarcodeIndex + nextBarcodeAdd) {
+						doubleBarcodeString += barcodesSplit[(firstBarcodeIndex + nextBarcodeAdd)]
+					}
+				}
+				c.double[sampleBarcode][doubleBarcodeString] += count
+			}
+		}
+	}
+}
+
+func (c *Counts) gatherEnriched(sampleBarcode string) (int, int) {
+	var totalSingle, totalDouble int
+	if len(c.single[sampleBarcode]) != 0 {
+		for convertedBarcodes, count := range c.single[sampleBarcode] {
+			totalSingle++
+			c.sampleOutSingle.WriteString("\n" + convertedBarcodes + "," + strconv.Itoa(count))
+			if c.merge {
+				if _, ok := c.countedBarcodesFinished[convertedBarcodes]; !ok {
+					mergeRow := "\n" + convertedBarcodes
+					for _, sampleBarcode := range c.sampleBarcodesSorted {
+						mergeRow += "," + strconv.Itoa(c.single[sampleBarcode][convertedBarcodes])
+					}
+					c.mergeOutSingle.WriteString(mergeRow)
+					c.countedBarcodesFinished[convertedBarcodes] = true
+				}
+			}
+			if totalSingle%10000 == 0 {
+				fmt.Printf("\rTotal: %v", totalSingle)
+			}
+		}
+	}
+	if len(c.double[sampleBarcode]) != 0 {
+		for convertedBarcodes, count := range c.double[sampleBarcode] {
+			totalDouble++
+			c.sampleOutDouble.WriteString("\n" + convertedBarcodes + "," + strconv.Itoa(count))
+			if c.merge {
+				if _, ok := c.countedBarcodesFinished[convertedBarcodes]; !ok {
+					mergeRow := "\n" + convertedBarcodes
+					for _, sampleBarcode := range c.sampleBarcodesSorted {
+						mergeRow += "," + strconv.Itoa(c.single[sampleBarcode][convertedBarcodes])
+					}
+					c.mergeOutDouble.WriteString(mergeRow)
+					c.countedBarcodesFinished[convertedBarcodes] = true
+				}
+			}
+			if totalDouble%10000 == 0 {
+				fmt.Printf("\rTotal: %v", totalDouble)
+			}
+		}
+	}
+	return totalSingle, totalDouble
 }
 
 type ParseErrors struct {
