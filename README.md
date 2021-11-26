@@ -21,6 +21,7 @@ The scores used are after ascii conversion and 33 subtraction.~~
 Go refactoring of [NGS-Barcode-Count](https://github.com/Roco-scientist/NGS-Barcode-Count), which is written in Rust. Features not yet refactored:  
 - Stat file output
 - Sequencing read quality filter
+- Aggregation by sample DNA barcode when sample conversion file is not included
   
 Inspired by and some ideas adopted from [decode](https://github.com/sunghunbae/decode)  
   
